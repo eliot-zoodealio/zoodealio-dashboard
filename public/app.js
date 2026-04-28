@@ -26,6 +26,7 @@ const METRIC_KEYS = [
 
 let lastSnapshot = null;
 let firstRender = true;
+let nextRefreshAt = Date.now() + REFRESH_MS;
 
 // ---------- Fetch loop ----------
 
@@ -39,7 +40,22 @@ async function fetchMetrics() {
   } catch (err) {
     console.error('[dashboard] fetch failed:', err);
     setStatus('error', null, err.message);
+  } finally {
+    // Reset the countdown whether we succeeded or failed; we still want to retry on schedule.
+    nextRefreshAt = Date.now() + REFRESH_MS;
+    updateRefreshCountdown();
   }
+}
+
+// Updates the "refreshes in M:SS" label. Ticks once per second.
+function updateRefreshCountdown() {
+  const el = document.getElementById('refresh-countdown');
+  if (!el) return;
+  const remainingMs = Math.max(0, nextRefreshAt - Date.now());
+  const totalSec = Math.floor(remainingMs / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  el.textContent = `${m}:${String(s).padStart(2, '0')}`;
 }
 
 // ---------- Rendering ----------
@@ -61,6 +77,20 @@ function render(data) {
   // Goal bar
   setGoalProgress(data.totals.goalProgress);
 
+  // Goal % readout (rounded to whole percent)
+  setText('goal-pct', Math.round((data.totals.goalProgress || 0) * 100));
+
+  // Year-to-date total (acquisitions + resales)
+  const ytdTotal =
+    Number(data.metrics?.closedAcqYear || 0) +
+    Number(data.metrics?.closedResaleYear || 0);
+  setText('ytd-total', formatNumber(ytdTotal));
+
+  // Days left in current calendar month (in dashboard timezone)
+  const daysLeft = daysLeftInMonth(data.timezone);
+  setText('days-left', daysLeft);
+  setText('days-left-big', daysLeft);
+
   // Goal milestone celebration (cross 30 for the first time)
   if (
     old &&
@@ -71,10 +101,10 @@ function render(data) {
     confettiBurst({ x: 0.5, y: 0.4, count: 100 });
   }
 
-  // Month label
+  // Month label (e.g. "April 2026" + short month name for the goal eyebrow)
   const monthName = formatMonth(data.timezone);
-  setText('goal-month', monthName);
   setText('footer-month', monthName);
+  setText('goal-month-label', formatMonthShort(data.timezone));
 
   lastSnapshot = data;
   firstRender = false;
@@ -145,6 +175,31 @@ function formatMonth(tz) {
     year: 'numeric',
     timeZone: tz || undefined,
   });
+}
+
+function formatMonthShort(tz) {
+  return new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    timeZone: tz || undefined,
+  });
+}
+
+// Days remaining in the current calendar month (inclusive of today).
+// Computed in the dashboard's timezone so the count flips at local midnight.
+function daysLeftInMonth(tz) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz || undefined,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  });
+  const parts = fmt.formatToParts(new Date());
+  const year = Number(parts.find((p) => p.type === 'year').value);
+  const month = Number(parts.find((p) => p.type === 'month').value);
+  const day = Number(parts.find((p) => p.type === 'day').value);
+  // Day 0 of next month = last day of current month.
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return Math.max(0, lastDay - day);
 }
 
 // ===========================================================
@@ -311,6 +366,9 @@ initConfetti();
 
 fetchMetrics();
 setInterval(fetchMetrics, REFRESH_MS);
+// Live "refreshes in M:SS" countdown — ticks every second.
+setInterval(updateRefreshCountdown, 1000);
+updateRefreshCountdown();
 
 // Quick keyboard hooks for testing celebrations without waiting for sheet changes.
 // Press 'p' for peek, 'd' for drop, 's' for swing. Disable in production by removing

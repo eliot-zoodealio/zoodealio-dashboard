@@ -10,10 +10,9 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <!-- Inline SVG symbol library (placeholder fallbacks; override via /assets/<slot>.svg files) -->
+  <!-- Inline SVG symbol library (placeholder fallbacks; override via /assets/<slot>.svg|png files) -->
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <defs>
-      <!-- Zee, the Zoodealio map-pin monkey mascot. CSS rotates/translates for peek/drop/swing. -->
       <symbol id="zee" viewBox="0 0 100 108">
         <path d="M 38 14 L 41 4 L 44 14 Z" fill="#8FC043"/>
         <path d="M 54 14 L 57 4 L 60 14 Z" fill="#8FC043"/>
@@ -28,7 +27,6 @@
         <path d="M 34 65 Q 50 79 66 65" stroke="#1C1917" stroke-width="3" fill="none" stroke-linecap="round"/>
       </symbol>
 
-      <!-- Tile icons -->
       <symbol id="i-handshake" viewBox="0 0 32 32">
         <path d="M5 16 L11 10 L16 14 L21 10 L27 16 L21 22 L16 18 L11 22 Z" fill="currentColor"/>
       </symbol>
@@ -82,155 +80,159 @@
              src="/assets/Zoodealio-Logo.png"
              alt="Zoodealio"
              onerror="this.outerHTML='<div class=&quot;brand-fallback&quot;>Zoodealio</div>'">
+        <span class="brand-tagline">Live Pipeline</span>
       </div>
-
-      <div class="goal">
-        <div class="goal-header">
-          <div class="goal-label">Closings This Month</div>
-          <div class="goal-month" id="goal-month">—</div>
-        </div>
-        <div class="goal-track">
-          <div class="goal-fill" id="goal-fill"></div>
-          <div class="goal-fill-zee" id="goal-fill-zee">
-            <svg viewBox="0 0 100 108"><use href="#zee"/></svg>
-          </div>
-        </div>
-        <div class="goal-stats">
-          <div class="goal-current">
-            <span class="goal-current-num" data-metric="closingsMonth">0</span>
-            <span class="goal-current-of">of 30</span>
-          </div>
-          <div class="goal-remaining">
-            <span data-metric="goalRemaining">30</span> to go
-          </div>
-        </div>
-      </div>
-
       <div class="status">
         <div class="status-dot" id="status-dot"></div>
         <div class="status-text">
-          <div class="status-label">Updated</div>
           <div class="status-time" id="status-time">—</div>
+          <div class="status-label">refreshes in <span id="refresh-countdown">5:00</span></div>
         </div>
       </div>
     </header>
 
-    <!-- ============ MAIN PIPELINE ============ -->
-    <main class="pipeline">
-      <!-- Acquisitions side -->
-      <section class="side side-acquisitions">
-        <div class="side-header">
-          <span class="side-arrow">▶</span>
-          Acquisitions
+    <!-- ============ HERO ROW ============ -->
+    <section class="hero-row">
+      <div class="hero hero-acq">
+        <div class="hero-icon">
+          <img src="/assets/Icons%20for%20dashboard%202.001.png"
+               alt=""
+               onerror="this.outerHTML='<svg><use href=&quot;#i-house-in&quot;/></svg>'">
         </div>
-        <div class="side-tiles">
-          <div class="tile tile-step">
-            <div class="tile-icon"><svg><use href="#i-handshake"/></svg></div>
-            <div class="tile-meta">
-              <div class="tile-label">Acceptances</div>
-            </div>
-            <div class="tile-value" data-metric="acceptancesAcq" data-celebrate="peek">0</div>
-          </div>
-
-          <div class="tile tile-step">
-            <div class="tile-icon"><svg><use href="#i-clipboard"/></svg></div>
-            <div class="tile-meta">
-              <div class="tile-label">Inspection</div>
-            </div>
-            <div class="tile-value" data-metric="inspectionAcq">0</div>
-          </div>
-
-          <div class="tile tile-step tile-checked">
-            <div class="tile-check"><svg><use href="#i-check"/></svg></div>
-            <div class="tile-icon"><svg><use href="#i-clipboard"/></svg></div>
-            <div class="tile-meta">
-              <div class="tile-label">Insp. Accepted</div>
-            </div>
-            <div class="tile-value" data-metric="inspectionAccepted">0</div>
-          </div>
-
-          <div class="tile tile-step">
-            <div class="tile-icon"><svg><use href="#i-calendar"/></svg></div>
-            <div class="tile-meta">
-              <div class="tile-label">Projected Close</div>
-              <div class="tile-sublabel">this month</div>
-            </div>
-            <div class="tile-value" data-metric="projectedClosingsMonth">0</div>
-          </div>
-
-          <div class="tile tile-hero">
-            <div class="tile-icon">
-              <img src="/assets/Icons%20for%20dashboard%202.001.png"
-                   alt=""
-                   onerror="this.outerHTML='<svg><use href=&quot;#i-house-in&quot;/></svg>'">
-            </div>
-            <div class="tile-meta">
-              <div class="tile-label">Closed Acquisitions</div>
-              <div class="tile-sublabel">this month</div>
-            </div>
-            <div class="tile-value" data-metric="closedAcqMonth" data-celebrate="drop">0</div>
-            <div class="tile-ytd">
-              <span data-metric="closedAcqYear">0</span> year to date
-            </div>
-          </div>
+        <div class="hero-content">
+          <div class="hero-eyebrow">Closed · Acquisitions</div>
+          <div class="hero-num" data-metric="closedAcqMonth" data-celebrate="drop">0</div>
+          <div class="hero-period">this month</div>
+          <div class="hero-ytd"><span data-metric="closedAcqYear">0</span> year to date</div>
         </div>
-      </section>
-
-      <!-- Renovation bridge -->
-      <section class="bridge">
-        <div class="tile tile-bridge">
-          <div class="tile-icon"><svg><use href="#i-hammer"/></svg></div>
-          <div class="tile-meta">
-            <div class="tile-label">Renovations</div>
-            <div class="tile-sublabel">in process</div>
-          </div>
-          <div class="tile-value" data-metric="renovationsInProcess">0</div>
+      </div>
+      <div class="hero hero-resale">
+        <div class="hero-icon">
+          <img src="/assets/Icons%20for%20dashboard%201.001.png"
+               alt=""
+               onerror="this.outerHTML='<svg><use href=&quot;#i-house-sold&quot;/></svg>'">
         </div>
-      </section>
-
-      <!-- Resale side -->
-      <section class="side side-resale">
-        <div class="side-header">
-          Resale
-          <span class="side-arrow">▶</span>
+        <div class="hero-content">
+          <div class="hero-eyebrow">Closed · Resale</div>
+          <div class="hero-num" data-metric="closedResaleMonth" data-celebrate="drop">0</div>
+          <div class="hero-period">this month</div>
+          <div class="hero-ytd"><span data-metric="closedResaleYear">0</span> year to date</div>
         </div>
-        <div class="side-tiles">
-          <div class="tile tile-step">
-            <div class="tile-icon"><svg><use href="#i-tag"/></svg></div>
-            <div class="tile-meta">
-              <div class="tile-label">Listings</div>
-              <div class="tile-sublabel">for sale</div>
-            </div>
-            <div class="tile-value" data-metric="listingsForSale">0</div>
-          </div>
+      </div>
+    </section>
 
-          <div class="tile tile-step tile-checked">
-            <div class="tile-check"><svg><use href="#i-check"/></svg></div>
-            <div class="tile-icon"><svg><use href="#i-tag"/></svg></div>
-            <div class="tile-meta">
-              <div class="tile-label">Under Contract</div>
-            </div>
-            <div class="tile-value" data-metric="underContractResale">0</div>
-          </div>
+    <!-- ============ PIPELINE LABEL ============ -->
+    <div class="pipeline-label">
+      <span class="pipeline-title">The Pipeline</span>
+      <span class="pipeline-divider"></span>
+      <span class="pipeline-flow">acquire <span class="pipeline-arrow">→</span> renovate <span class="pipeline-arrow">→</span> sell</span>
+    </div>
 
-          <div class="tile tile-hero">
-            <div class="tile-icon">
-              <img src="/assets/Icons%20for%20dashboard%201.001.png"
-                   alt=""
-                   onerror="this.outerHTML='<svg><use href=&quot;#i-house-sold&quot;/></svg>'">
-            </div>
-            <div class="tile-meta">
-              <div class="tile-label">Closed Resale</div>
-              <div class="tile-sublabel">this month</div>
-            </div>
-            <div class="tile-value" data-metric="closedResaleMonth" data-celebrate="drop">0</div>
-            <div class="tile-ytd">
-              <span data-metric="closedResaleYear">0</span> year to date
-            </div>
+    <!-- ============ PIPELINE STRIP ============ -->
+    <section class="pipeline-strip">
+      <div class="strip-tile">
+        <div class="strip-icon">
+          <img src="/assets/acceptance-icon.png"
+               alt=""
+               onerror="this.outerHTML='<svg><use href=&quot;#i-handshake&quot;/></svg>'">
+        </div>
+        <div class="strip-label">Acceptances</div>
+        <div class="strip-num" data-metric="acceptancesAcq" data-celebrate="peek">0</div>
+        <div class="strip-sublabel">new this month</div>
+      </div>
+
+      <div class="strip-tile">
+        <div class="strip-icon"><svg><use href="#i-clipboard"/></svg></div>
+        <div class="strip-label">Inspections</div>
+        <div class="strip-num" data-metric="inspectionAcq">0</div>
+        <div class="strip-sublabel">in progress</div>
+      </div>
+
+      <div class="strip-tile strip-checked">
+        <div class="strip-check"><svg><use href="#i-check"/></svg></div>
+        <div class="strip-icon"><svg><use href="#i-clipboard"/></svg></div>
+        <div class="strip-label">Insp. Accepted</div>
+        <div class="strip-num" data-metric="inspectionAccepted">0</div>
+        <div class="strip-sublabel">cleared</div>
+      </div>
+
+      <div class="strip-tile strip-emphasis">
+        <div class="strip-icon"><svg><use href="#i-calendar"/></svg></div>
+        <div class="strip-label">Projected Close</div>
+        <div class="strip-num" data-metric="projectedClosingsMonth">0</div>
+        <div class="strip-sublabel">this month</div>
+      </div>
+
+      <div class="strip-tile">
+        <div class="strip-icon"><svg><use href="#i-hammer"/></svg></div>
+        <div class="strip-label">In Shop</div>
+        <div class="strip-num" data-metric="renovationsInProcess">0</div>
+        <div class="strip-sublabel">renovating</div>
+      </div>
+
+      <div class="strip-tile">
+        <div class="strip-icon"><svg><use href="#i-tag"/></svg></div>
+        <div class="strip-label">Listings</div>
+        <div class="strip-num" data-metric="listingsForSale">0</div>
+        <div class="strip-sublabel">for sale</div>
+      </div>
+
+      <div class="strip-tile strip-checked strip-emphasis">
+        <div class="strip-check"><svg><use href="#i-check"/></svg></div>
+        <div class="strip-icon"><svg><use href="#i-tag"/></svg></div>
+        <div class="strip-label">Under Contract</div>
+        <div class="strip-num" data-metric="underContractResale">0</div>
+        <div class="strip-sublabel">closing soon</div>
+      </div>
+    </section>
+
+    <!-- ============ BOTTOM ROW ============ -->
+    <section class="bottom-row">
+      <div class="card card-goal">
+        <div class="card-eyebrow"><span id="goal-month-label">This Month</span> · Closings Goal</div>
+        <div class="goal-display">
+          <span class="goal-num" data-metric="closingsMonth">0</span>
+          <span class="goal-of">of 30</span>
+        </div>
+        <div class="goal-track">
+          <div class="goal-fill" id="goal-fill"></div>
+          <div class="goal-fill-zee" id="goal-fill-zee">
+            <img src="/assets/zee-head.png"
+                 alt=""
+                 onerror="this.outerHTML='<svg viewBox=&quot;0 0 100 108&quot;><use href=&quot;#zee&quot;/></svg>'">
           </div>
         </div>
-      </section>
-    </main>
+        <div class="goal-stats">
+          <span><strong id="goal-pct">0</strong>%</span>
+          <span class="goal-stats-divider">·</span>
+          <span><strong data-metric="goalRemaining">30</strong> to go</span>
+          <span class="goal-stats-divider">·</span>
+          <span><strong id="days-left">—</strong> days left</span>
+        </div>
+      </div>
+
+      <div class="card card-countdown">
+        <div class="card-eyebrow">Days Left in Month</div>
+        <div class="countdown-num" id="days-left-big">—</div>
+        <div class="countdown-meta">to hit the goal</div>
+      </div>
+
+      <div class="card card-ytd">
+        <div class="card-eyebrow">Year to Date</div>
+        <div class="ytd-row">
+          <span class="ytd-label">Acquisitions</span>
+          <span class="ytd-value" data-metric="closedAcqYear">0</span>
+        </div>
+        <div class="ytd-row">
+          <span class="ytd-label">Resales</span>
+          <span class="ytd-value" data-metric="closedResaleYear">0</span>
+        </div>
+        <div class="ytd-row ytd-total-row">
+          <span class="ytd-label">Total Closings</span>
+          <span class="ytd-value" id="ytd-total">0</span>
+        </div>
+      </div>
+    </section>
 
     <!-- ============ FOOTER ============ -->
     <footer class="footer">

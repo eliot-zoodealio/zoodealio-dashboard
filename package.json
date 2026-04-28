@@ -1,0 +1,16 @@
+{
+  "name": "zoodealio-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Live office TV dashboard for the Zoodealio real estate pipeline.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  }
+}

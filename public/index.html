@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <title>Zoodealio Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Inline SVG symbol library (placeholder fallbacks; override via /assets/<slot>.svg files) -->
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <defs>
+      <!-- Zee, the Zoodealio map-pin monkey mascot. CSS rotates/translates for peek/drop/swing. -->
+      <symbol id="zee" viewBox="0 0 100 108">
+        <path d="M 38 14 L 41 4 L 44 14 Z" fill="#8FC043"/>
+        <path d="M 54 14 L 57 4 L 60 14 Z" fill="#8FC043"/>
+        <path d="M 50 104 L 8 54 C 8 18, 92 18, 92 54 Z" fill="#8FC043"/>
+        <ellipse cx="13" cy="46" rx="7" ry="8" fill="#8FC043"/>
+        <ellipse cx="87" cy="46" rx="7" ry="8" fill="#8FC043"/>
+        <ellipse cx="13" cy="46" rx="3" ry="4" fill="white"/>
+        <ellipse cx="87" cy="46" rx="3" ry="4" fill="white"/>
+        <ellipse cx="50" cy="56" rx="30" ry="28" fill="white"/>
+        <path d="M 31 50 Q 38 43 45 50" stroke="#1C1917" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="62" cy="50" r="4" fill="#1C1917"/>
+        <path d="M 34 65 Q 50 79 66 65" stroke="#1C1917" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Tile icons -->
+      <symbol id="i-handshake" viewBox="0 0 32 32">
+        <path d="M5 16 L11 10 L16 14 L21 10 L27 16 L21 22 L16 18 L11 22 Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-clipboard" viewBox="0 0 32 32">
+        <rect x="8" y="6" width="16" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <rect x="12" y="3" width="8" height="5" rx="1" fill="currentColor"/>
+        <line x1="12" y1="14" x2="20" y2="14" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="22" x2="20" y2="22" stroke="currentColor" stroke-width="2"/>
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="14" fill="#8FC043"/>
+        <path d="M9 16 L14 21 L23 11" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-calendar" viewBox="0 0 32 32">
+        <rect x="5" y="8" width="22" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="5" y1="14" x2="27" y2="14" stroke="currentColor" stroke-width="2"/>
+        <line x1="11" y1="4" x2="11" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="21" y1="4" x2="21" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-house-in" viewBox="0 0 32 32">
+        <path d="M16 4 L4 14 L4 28 L28 28 L28 14 Z" fill="currentColor"/>
+        <rect x="13" y="18" width="6" height="10" fill="white"/>
+        <circle cx="22" cy="9" r="2.5" fill="#8FC043"/>
+        <line x1="22" y1="9" x2="22" y2="14" stroke="#8FC043" stroke-width="2"/>
+      </symbol>
+      <symbol id="i-hammer" viewBox="0 0 32 32">
+        <g transform="rotate(-30 16 16)">
+          <rect x="6" y="11" width="14" height="6" rx="1" fill="currentColor"/>
+          <rect x="13" y="14" width="3" height="14" fill="currentColor"/>
+        </g>
+      </symbol>
+      <symbol id="i-tag" viewBox="0 0 32 32">
+        <path d="M4 4 L16 4 L28 16 L16 28 L4 16 Z" fill="currentColor"/>
+        <circle cx="10" cy="10" r="2" fill="white"/>
+      </symbol>
+      <symbol id="i-house-sold" viewBox="0 0 32 32">
+        <path d="M16 6 L5 15 L5 27 L27 27 L27 15 Z" fill="currentColor"/>
+        <rect x="13" y="19" width="6" height="8" fill="white"/>
+        <rect x="9" y="11" width="14" height="5" rx="0.5" fill="#8FC043"/>
+        <text x="16" y="15" text-anchor="middle" font-family="Nunito, sans-serif" font-size="4" font-weight="900" fill="white">SOLD</text>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="dashboard">
+    <!-- ============ TOP BAR ============ -->
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-logo"
+             src="/assets/Zoodealio-Logo.png"
+             alt="Zoodealio"
+             onerror="this.outerHTML='<div class=&quot;brand-fallback&quot;>Zoodealio</div>'">
+      </div>
+
+      <div class="goal">
+        <div class="goal-header">
+          <div class="goal-label">Closings This Month</div>
+          <div class="goal-month" id="goal-month">—</div>
+        </div>
+        <div class="goal-track">
+          <div class="goal-fill" id="goal-fill"></div>
+          <div class="goal-fill-zee" id="goal-fill-zee">
+            <svg viewBox="0 0 100 108"><use href="#zee"/></svg>
+          </div>
+        </div>
+        <div class="goal-stats">
+          <div class="goal-current">
+            <span class="goal-current-num" data-metric="closingsMonth">0</span>
+            <span class="goal-current-of">of 30</span>
+          </div>
+          <div class="goal-remaining">
+            <span data-metric="goalRemaining">30</span> to go
+          </div>
+        </div>
+      </div>
+
+      <div class="status">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-text">
+          <div class="status-label">Updated</div>
+          <div class="status-time" id="status-time">—</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ MAIN PIPELINE ============ -->
+    <main class="pipeline">
+      <!-- Acquisitions side -->
+      <section class="side side-acquisitions">
+        <div class="side-header">
+          <span class="side-arrow">▶</span>
+          Acquisitions
+        </div>
+        <div class="side-tiles">
+          <div class="tile tile-step">
+            <div class="tile-icon"><svg><use href="#i-handshake"/></svg></div>
+            <div class="tile-meta">
+              <div class="tile-label">Acceptances</div>
+            </div>
+            <div class="tile-value" data-metric="acceptancesAcq" data-celebrate="peek">0</div>
+          </div>
+
+          <div class="tile tile-step">
+            <div class="tile-icon"><svg><use href="#i-clipboard"/></svg></div>
+            <div class="tile-meta">
+              <div class="tile-label">Inspection</div>
+            </div>
+            <div class="tile-value" data-metric="inspectionAcq">0</div>
+          </div>
+
+          <div class="tile tile-step tile-checked">
+            <div class="tile-check"><svg><use href="#i-check"/></svg></div>
+            <div class="tile-icon"><svg><use href="#i-clipboard"/></svg></div>
+            <div class="tile-meta">
+              <div class="tile-label">Insp. Accepted</div>
+            </div>
+            <div class="tile-value" data-metric="inspectionAccepted">0</div>
+          </div>
+
+          <div class="tile tile-step">
+            <div class="tile-icon"><svg><use href="#i-calendar"/></svg></div>
+            <div class="tile-meta">
+              <div class="tile-label">Projected Close</div>
+              <div class="tile-sublabel">this month</div>
+            </div>
+            <div class="tile-value" data-metric="projectedClosingsMonth">0</div>
+          </div>
+
+          <div class="tile tile-hero">
+            <div class="tile-icon">
+              <img src="/assets/Icons%20for%20dashboard%202.001.png"
+                   alt=""
+                   onerror="this.outerHTML='<svg><use href=&quot;#i-house-in&quot;/></svg>'">
+            </div>
+            <div class="tile-meta">
+              <div class="tile-label">Closed Acquisitions</div>
+              <div class="tile-sublabel">this month</div>
+            </div>
+            <div class="tile-value" data-metric="closedAcqMonth" data-celebrate="drop">0</div>
+            <div class="tile-ytd">
+              <span data-metric="closedAcqYear">0</span> year to date
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Renovation bridge -->
+      <section class="bridge">
+        <div class="tile tile-bridge">
+          <div class="tile-icon"><svg><use href="#i-hammer"/></svg></div>
+          <div class="tile-meta">
+            <div class="tile-label">Renovations</div>
+            <div class="tile-sublabel">in process</div>
+          </div>
+          <div class="tile-value" data-metric="renovationsInProcess">0</div>
+        </div>
+      </section>
+
+      <!-- Resale side -->
+      <section class="side side-resale">
+        <div class="side-header">
+          Resale
+          <span class="side-arrow">▶</span>
+        </div>
+        <div class="side-tiles">
+          <div class="tile tile-step">
+            <div class="tile-icon"><svg><use href="#i-tag"/></svg></div>
+            <div class="tile-meta">
+              <div class="tile-label">Listings</div>
+              <div class="tile-sublabel">for sale</div>
+            </div>
+            <div class="tile-value" data-metric="listingsForSale">0</div>
+          </div>
+
+          <div class="tile tile-step tile-checked">
+            <div class="tile-check"><svg><use href="#i-check"/></svg></div>
+            <div class="tile-icon"><svg><use href="#i-tag"/></svg></div>
+            <div class="tile-meta">
+              <div class="tile-label">Under Contract</div>
+            </div>
+            <div class="tile-value" data-metric="underContractResale">0</div>
+          </div>
+
+          <div class="tile tile-hero">
+            <div class="tile-icon">
+              <img src="/assets/Icons%20for%20dashboard%201.001.png"
+                   alt=""
+                   onerror="this.outerHTML='<svg><use href=&quot;#i-house-sold&quot;/></svg>'">
+            </div>
+            <div class="tile-meta">
+              <div class="tile-label">Closed Resale</div>
+              <div class="tile-sublabel">this month</div>
+            </div>
+            <div class="tile-value" data-metric="closedResaleMonth" data-celebrate="drop">0</div>
+            <div class="tile-ytd">
+              <span data-metric="closedResaleYear">0</span> year to date
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+      <div class="footer-left">Zoodealio Office Dashboard</div>
+      <div class="footer-center">Auto-refreshes every 5 minutes</div>
+      <div class="footer-right" id="footer-month">—</div>
+    </footer>
+
+    <!-- Celebration overlay (Zee + confetti) -->
+    <div class="overlay" aria-hidden="true">
+      <canvas id="confetti"></canvas>
+      <div class="zee-stage" id="zee-stage"></div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

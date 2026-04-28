@@ -20,7 +20,7 @@ const SHEETS = {
 };
 
 const TABS = {
-  acquisitionsEscrows: 'acquisitions escrows',
+  acquisitionsEscrows: 'acquisition escrows',
   listings: 'listings',
   closed: 'closed',
 };

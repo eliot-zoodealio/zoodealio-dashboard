@@ -96,9 +96,9 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 ### Total Closings (this month) → goal bar
 
 - Definition: `(5b) + (9b)` = acquisitions closed this month + resale closed this month
-- **Goal: 30 per month** (combined across both sides)
-- Display: goal bar across the top, `X of 30`, progress fill in Zoodealio green
-- Animation: extra Zee swing + confetti when we cross 30
+- **Goal: 25 per month** (combined across both sides)
+- Display: goal bar across the top, `X of 25`, progress fill in Zoodealio green
+- Animation: extra Zee swing + confetti when we cross 25
 
 ### Total Closings (year-to-date)
 

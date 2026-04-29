@@ -332,11 +332,18 @@ function triggerCelebration(type, sourceEl) {
 
   const actor = document.createElement('div');
   actor.className = `zee-actor ${type}`;
-  // Try the celebration-zee.png asset first; fall back to inline SVG if missing.
-  // Same pattern used by the goal-bar marker (zee-head.png) and other slots.
-  actor.innerHTML =
-    '<img src="/assets/celebration-zee.png" alt="" ' +
-    'onerror="this.outerHTML=\'<svg viewBox=&quot;0 0 100 108&quot;><use href=&quot;#zee&quot;/></svg>\'">';
+  // Celebration-Zee.001.png is used ONLY for peek + swing animations.
+  // Drop animation uses the inline SVG full-body Zee (the asset doesn't fit
+  // a top-down drop motion). Same fallback pattern (onerror -> inline SVG)
+  // is used by the goal-bar marker and other branded slots.
+  const useAsset = type === 'peek' || type === 'swing';
+  if (useAsset) {
+    actor.innerHTML =
+      '<img src="/assets/Celebration-Zee.001.png" alt="" ' +
+      'onerror="this.outerHTML=\'<svg viewBox=&quot;0 0 100 108&quot;><use href=&quot;#zee&quot;/></svg>\'">';
+  } else {
+    actor.innerHTML = '<svg viewBox="0 0 100 108"><use href="#zee"/></svg>';
+  }
 
   if (type === 'peek') {
     // Bottom corner — left for acquisitions side, right for resale side

@@ -25,7 +25,7 @@ const TABS = {
   closed: 'closed',
 };
 
-const GOAL_CLOSINGS_PER_MONTH = 30;
+const GOAL_CLOSINGS_PER_MONTH = 25;
 
 const TIMEZONE = process.env.DASHBOARD_TIMEZONE || 'America/Los_Angeles';
 

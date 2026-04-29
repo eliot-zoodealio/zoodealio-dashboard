@@ -2,14 +2,21 @@
 // Zoodealio Office Dashboard — front-end logic
 //
 // Responsibilities:
-//   1. Poll /api/metrics every 5 minutes.
+//   1. Poll /api/metrics every 30 minutes during business hours
+//      (Mon–Fri, 7am–6pm in the dashboard's timezone). Pause overnight
+//      and on weekends to avoid hammering Sheets when no one's looking.
 //   2. Update DOM bindings (any element with data-metric=...).
 //   3. Detect increases on celebration-flagged metrics (Acceptances,
-//      Closings) and trigger Zee animations + confetti.
+//      Closings) and trigger Zee animations. Burst banana confetti from
+//      ANY tile whose number ticks up.
 //   4. Update the goal bar fill + Zee position on the bar.
 // ===========================================================
 
-const REFRESH_MS = 5 * 60 * 1000;
+const REFRESH_MS = 30 * 60 * 1000; // 30 minutes between fetches during business hours
+const BUSINESS_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const BUSINESS_HOUR_START = 7;  // 7:00 AM (inclusive)
+const BUSINESS_HOUR_END = 18;   // 6:00 PM (exclusive — last refresh at 5:30pm)
+
 const METRIC_KEYS = [
   'acceptancesAcq',
   'inspectionAcq',
@@ -26,11 +33,16 @@ const METRIC_KEYS = [
 
 let lastSnapshot = null;
 let firstRender = true;
-let nextRefreshAt = Date.now() + REFRESH_MS;
+let lastFetchAt = 0;
+let isFetching = false;
+let dashboardTz = 'America/Los_Angeles'; // overridden once /api/metrics responds
 
 // ---------- Fetch loop ----------
 
 async function fetchMetrics() {
+  if (isFetching) return;
+  isFetching = true;
+  lastFetchAt = Date.now(); // claim the slot up front so the tick loop doesn't double-fire
   try {
     const resp = await fetch('/api/metrics', { cache: 'no-cache' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -41,27 +53,83 @@ async function fetchMetrics() {
     console.error('[dashboard] fetch failed:', err);
     setStatus('error', null, err.message);
   } finally {
-    // Reset the countdown whether we succeeded or failed; we still want to retry on schedule.
-    nextRefreshAt = Date.now() + REFRESH_MS;
+    isFetching = false;
     updateRefreshCountdown();
   }
 }
 
-// Updates the "refreshes in M:SS" label. Ticks once per second.
+// Tick fired once per second. Updates the countdown label and decides whether
+// it's time to fetch again. Fetch only when (a) we're in business hours and
+// (b) at least REFRESH_MS has passed since the last fetch.
+function tick() {
+  if (
+    !isFetching &&
+    isBusinessHours() &&
+    Date.now() - lastFetchAt >= REFRESH_MS
+  ) {
+    fetchMetrics();
+  }
+  updateRefreshCountdown();
+}
+
+// True when "now" is Mon-Fri between 7am and 6pm in the dashboard's timezone.
+function isBusinessHours(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: dashboardTz,
+    weekday: 'short',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
+  const weekday = parts.find((p) => p.type === 'weekday').value;
+  const hour = Number(parts.find((p) => p.type === 'hour').value);
+  return (
+    BUSINESS_DAYS.includes(weekday) &&
+    hour >= BUSINESS_HOUR_START &&
+    hour < BUSINESS_HOUR_END
+  );
+}
+
+// Friendly label for the next time business hours start. Walks forward in
+// 5-minute steps and returns the first hit. Capped at 5 days to avoid loops.
+function nextBusinessOpenLabel() {
+  const stepMs = 5 * 60 * 1000;
+  const now = Date.now();
+  for (let i = 1; i <= (5 * 24 * 60) / 5; i++) {
+    const candidate = new Date(now + i * stepMs);
+    if (isBusinessHours(candidate)) {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: dashboardTz,
+        weekday: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(candidate);
+    }
+  }
+  return 'Mon 7:00 AM';
+}
+
+// Updates the status label. In business hours: "refreshes in M:SS". Off-hours:
+// "paused · resumes Mon 7:00 AM".
 function updateRefreshCountdown() {
-  const el = document.getElementById('refresh-countdown');
-  if (!el) return;
-  const remainingMs = Math.max(0, nextRefreshAt - Date.now());
+  const labelEl = document.getElementById('status-label');
+  if (!labelEl) return;
+  if (!isBusinessHours()) {
+    labelEl.textContent = `paused · resumes ${nextBusinessOpenLabel()}`;
+    return;
+  }
+  const remainingMs = Math.max(0, lastFetchAt + REFRESH_MS - Date.now());
   const totalSec = Math.floor(remainingMs / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
-  el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+  labelEl.innerHTML = `refreshes in <span id="refresh-countdown">${m}:${String(s).padStart(2, '0')}</span>`;
 }
 
 // ---------- Rendering ----------
 
 function render(data) {
   const old = lastSnapshot;
+  if (data.timezone) dashboardTz = data.timezone;
 
   // Per-metric updates
   for (const key of METRIC_KEYS) {
@@ -122,8 +190,25 @@ function updateMetric(key, value, oldValue) {
     if (!firstRender && oldValue != null && incoming > oldValue) {
       popNumber(el);
       const celebrate = el.dataset.celebrate;
-      if (celebrate) triggerCelebration(celebrate, el);
+      if (celebrate) {
+        // Marquee tiles get the full Zee animation (and 'drop' includes its own confetti).
+        triggerCelebration(celebrate, el);
+      } else {
+        // Every other tile still celebrates — short banana confetti burst from the tile center.
+        burstFromElement(el, 28);
+      }
     }
+  });
+}
+
+// Helper: confetti burst centered on an element's bounding box.
+function burstFromElement(el, count = 30) {
+  const rect = el.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  confettiBurst({
+    x: (rect.left + rect.width / 2) / window.innerWidth,
+    y: (rect.top + rect.height / 2) / window.innerHeight,
+    count,
   });
 }
 
@@ -252,7 +337,10 @@ function triggerCelebration(type, sourceEl) {
 }
 
 // ===========================================================
-// Map-pin confetti (canvas)
+// Banana confetti (canvas)
+// Each piece is a little curved crescent banana. Palette is mostly banana
+// yellows with a couple of brand accents so the whole effect still feels
+// on-brand against the deep-blue / green dashboard.
 // ===========================================================
 
 const confettiCanvas = document.getElementById('confetti');
@@ -273,7 +361,16 @@ function confettiBurst({ x = 0.5, y = 0.4, count = 50 } = {}) {
 
   const cx = x * window.innerWidth;
   const cy = y * window.innerHeight;
-  const palette = ['#8FC043', '#1A5EBF', '#3D6FB5', '#0E50B0', '#B5DC6E'];
+  // Banana yellows in front, with a couple of brand accents sprinkled in.
+  const palette = [
+    '#FFD93D', // bright banana
+    '#F5D547', // ripe banana
+    '#F8E16C', // pale banana
+    '#FCE96A', // cream
+    '#E8B923', // golden
+    '#8FC043', // brand green (banana leaf)
+    '#1A5EBF', // brand deep blue (rare accent)
+  ];
 
   for (let i = 0; i < count; i++) {
     const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
@@ -287,7 +384,7 @@ function confettiBurst({ x = 0.5, y = 0.4, count = 50 } = {}) {
       rotation: Math.random() * Math.PI * 2,
       vRotation: (Math.random() - 0.5) * 0.25,
       color: palette[Math.floor(Math.random() * palette.length)],
-      size: 12 + Math.random() * 12,
+      size: 16 + Math.random() * 14, // bananas need a touch more bulk than pins
       life: 1,
       decay: 0.005 + Math.random() * 0.005,
     });
@@ -319,7 +416,7 @@ function stepConfetti() {
       confettiPieces.splice(i, 1);
       continue;
     }
-    drawPin(confettiCtx, p);
+    drawBanana(confettiCtx, p);
   }
 
   if (confettiPieces.length > 0) {
@@ -330,7 +427,10 @@ function stepConfetti() {
   }
 }
 
-function drawPin(ctx, p) {
+// Draws a tiny crescent-shaped banana centered at (0,0) in the local frame.
+// Coordinate system spans roughly x: -14..14, y: -10..10 — divisor in
+// confettiBurst (size / 20) keeps the visual scale consistent with old pins.
+function drawBanana(ctx, p) {
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.4));
   ctx.translate(p.x, p.y);
@@ -338,20 +438,30 @@ function drawPin(ctx, p) {
   const s = p.size / 20;
   ctx.scale(s, s);
 
-  // Map-pin teardrop body
+  // Banana body — outer arc curls up, inner arc curls back
   ctx.fillStyle = p.color;
   ctx.beginPath();
-  ctx.moveTo(10, 22);
-  ctx.bezierCurveTo(2, 13, 0, 7, 4, 4);
-  ctx.bezierCurveTo(8, 1, 12, 1, 16, 4);
-  ctx.bezierCurveTo(20, 7, 18, 13, 10, 22);
+  ctx.moveTo(-12, 4);
+  ctx.bezierCurveTo(-12, -10, 6, -12, 13, -4); // top curve, left tip → right shoulder
+  ctx.bezierCurveTo(15, -1, 14, 2, 11, 4);     // right tip
+  ctx.bezierCurveTo(8, 5, 5, 4, 0, 6);         // belly
+  ctx.bezierCurveTo(-5, 8, -10, 8, -12, 4);    // back to left tip
   ctx.closePath();
   ctx.fill();
 
-  // White inner dot
-  ctx.fillStyle = 'white';
+  // Subtle highlight stripe down the inner curve
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.arc(10, 8, 2.6, 0, Math.PI * 2);
+  ctx.moveTo(-9, 2);
+  ctx.bezierCurveTo(-4, -5, 6, -7, 11, -2);
+  ctx.stroke();
+
+  // Tiny darker tips so it reads as a banana, not just a blob
+  ctx.fillStyle = 'rgba(80, 50, 0, 0.55)';
+  ctx.beginPath();
+  ctx.arc(-12, 4, 1.4, 0, Math.PI * 2);
+  ctx.arc(13, -3, 1.2, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
@@ -364,10 +474,12 @@ initConfetti();
 // Boot
 // ===========================================================
 
+// Always pull data on first load — even off-hours — so the dashboard isn't
+// blank when someone glances at it before 7am or over the weekend.
 fetchMetrics();
-setInterval(fetchMetrics, REFRESH_MS);
-// Live "refreshes in M:SS" countdown — ticks every second.
-setInterval(updateRefreshCountdown, 1000);
+// One-second tick handles both the live countdown and the business-hours-aware
+// refresh cadence. No separate fetch interval needed.
+setInterval(tick, 1000);
 updateRefreshCountdown();
 
 // Quick keyboard hooks for testing celebrations without waiting for sheet changes.

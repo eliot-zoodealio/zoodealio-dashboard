@@ -36,6 +36,7 @@ let firstRender = true;
 let lastFetchAt = 0;
 let isFetching = false;
 let dashboardTz = 'America/Los_Angeles'; // overridden once /api/metrics responds
+let errorState = null; // when set, surfaced in the header label until next ok fetch
 
 // ---------- Fetch loop ----------
 
@@ -89,40 +90,72 @@ function isBusinessHours(date = new Date()) {
   );
 }
 
-// Friendly label for the next time business hours start. Walks forward in
+// Returns the timestamp (ms) when business hours next open. Walks forward in
 // 5-minute steps and returns the first hit. Capped at 5 days to avoid loops.
-function nextBusinessOpenLabel() {
+function nextBusinessOpenMs() {
   const stepMs = 5 * 60 * 1000;
   const now = Date.now();
   for (let i = 1; i <= (5 * 24 * 60) / 5; i++) {
-    const candidate = new Date(now + i * stepMs);
-    if (isBusinessHours(candidate)) {
-      return new Intl.DateTimeFormat('en-US', {
-        timeZone: dashboardTz,
-        weekday: 'short',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      }).format(candidate);
-    }
+    const candidate = now + i * stepMs;
+    if (isBusinessHours(new Date(candidate))) return candidate;
   }
-  return 'Mon 7:00 AM';
+  return now + REFRESH_MS;
 }
 
-// Updates the status label. In business hours: "refreshes in M:SS". Off-hours:
-// "paused · resumes Mon 7:00 AM".
-function updateRefreshCountdown() {
-  const labelEl = document.getElementById('status-label');
-  if (!labelEl) return;
-  if (!isBusinessHours()) {
-    labelEl.textContent = `paused · resumes ${nextBusinessOpenLabel()}`;
-    return;
-  }
-  const remainingMs = Math.max(0, lastFetchAt + REFRESH_MS - Date.now());
-  const totalSec = Math.floor(remainingMs / 1000);
-  const m = Math.floor(totalSec / 60);
+// Formats a ms timestamp as a clock time in the dashboard tz. Includes the
+// weekday short name when it isn't today (so off-hours and weekend handoffs
+// read clearly: "Mon 7:00 AM" vs "9:00 AM").
+function formatClock(ms) {
+  const target = new Date(ms);
+  const todayStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: dashboardTz, year: 'numeric', month: 'numeric', day: 'numeric',
+  }).format(new Date());
+  const targetStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: dashboardTz, year: 'numeric', month: 'numeric', day: 'numeric',
+  }).format(target);
+  const sameDay = todayStr === targetStr;
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: dashboardTz,
+    weekday: sameDay ? undefined : 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(target);
+}
+
+// Formats a remaining duration (ms) as either "M:SS" (under an hour) or
+// "Hh Mm" (over an hour) — keeps off-hours countdowns readable.
+function formatCountdown(ms) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  labelEl.innerHTML = `refreshes in <span id="refresh-countdown">${m}:${String(s).padStart(2, '0')}</span>`;
+  if (h >= 1) return `${h}h ${m}m`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// Updates the upper-right header: shows when the next update will happen
+// and a live countdown to it. During business hours that's lastFetchAt + 30m;
+// off-hours it points at the next time business hours open.
+function updateRefreshCountdown() {
+  const timeEl = document.getElementById('status-time');
+  const labelEl = document.getElementById('status-label');
+  if (!timeEl || !labelEl) return;
+
+  const inBiz = isBusinessHours();
+  const nextMs = inBiz ? lastFetchAt + REFRESH_MS : nextBusinessOpenMs();
+  const remainingMs = Math.max(0, nextMs - Date.now());
+
+  // Big top line: the clock time of the next update (e.g. "9:00 AM" or
+  // "Mon 7:00 AM" when the next update is on a future day).
+  timeEl.textContent = formatClock(nextMs);
+  // Small bottom line: "next update · in 26:00" — or surface an error state
+  // until the next successful fetch clears it.
+  if (errorState) {
+    labelEl.textContent = errorState;
+  } else {
+    labelEl.textContent = `next update · in ${formatCountdown(remainingMs)}`;
+  }
 }
 
 // ---------- Rendering ----------
@@ -230,17 +263,19 @@ function setGoalProgress(progress) {
   if (zee) zee.style.left = `${pct}%`;
 }
 
-function setStatus(state, updatedAt, errMsg) {
+function setStatus(state, _updatedAt, errMsg) {
   const dot = document.getElementById('status-dot');
-  const time = document.getElementById('status-time');
-  if (!dot || !time) return;
+  if (!dot) return;
   if (state === 'ok') {
     dot.classList.remove('error');
-    time.textContent = formatTime(updatedAt);
+    errorState = null;
   } else {
     dot.classList.add('error');
-    time.textContent = errMsg ? `Error · ${errMsg.slice(0, 24)}` : 'Error';
+    errorState = errMsg ? `Error · ${errMsg.slice(0, 24)}` : 'Error';
   }
+  // Repaint immediately so the user sees the error or recovery without
+  // having to wait for the next 1-second tick.
+  updateRefreshCountdown();
 }
 
 function setText(id, text) {
@@ -297,7 +332,11 @@ function triggerCelebration(type, sourceEl) {
 
   const actor = document.createElement('div');
   actor.className = `zee-actor ${type}`;
-  actor.innerHTML = '<svg viewBox="0 0 100 108"><use href="#zee"/></svg>';
+  // Try the celebration-zee.png asset first; fall back to inline SVG if missing.
+  // Same pattern used by the goal-bar marker (zee-head.png) and other slots.
+  actor.innerHTML =
+    '<img src="/assets/celebration-zee.png" alt="" ' +
+    'onerror="this.outerHTML=\'<svg viewBox=&quot;0 0 100 108&quot;><use href=&quot;#zee&quot;/></svg>\'">';
 
   if (type === 'peek') {
     // Bottom corner — left for acquisitions side, right for resale side

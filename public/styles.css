@@ -146,14 +146,15 @@ html, body {
   position: relative;
   background: linear-gradient(160deg, var(--blue-700) 0%, var(--blue-900) 100%);
   border-radius: 1.2vw;
-  padding: 1.4vw 2vw;
+  padding: 1.1vw 1.8vw;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 2vw;
+  gap: 1.6vw;
   color: var(--white);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  min-height: 0;
 }
 
 .hero::before {
@@ -190,15 +191,18 @@ html, body {
 }
 
 .hero-eyebrow {
-  font-size: 1.15vw;
+  font-size: min(1.15vw, 2.4vh);
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.75);
 }
 
+/* Cap by both vw and vh so the number can never overflow the hero row, even
+   when the browser window is short and the row height (26vh) is the
+   constraint instead of the column width. */
 .hero-num {
-  font-size: 9vw;
+  font-size: min(8vw, 14vh);
   font-weight: 900;
   line-height: 0.95;
   letter-spacing: -0.05em;
@@ -209,10 +213,10 @@ html, body {
 }
 
 .hero-period {
-  font-size: 1.4vw;
+  font-size: min(1.3vw, 2.6vh);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.92);
-  margin-top: -0.4vh;
+  margin-top: -0.2vh;
   text-transform: lowercase;
   letter-spacing: -0.005em;
 }
@@ -643,7 +647,8 @@ html, body {
   filter: drop-shadow(0 1vw 2vw rgba(10, 61, 130, 0.35));
 }
 
-.zee-actor svg { width: 100%; height: 100%; }
+.zee-actor svg,
+.zee-actor img { width: 100%; height: 100%; object-fit: contain; }
 
 @keyframes zee-peek {
   0% { transform: translateY(120%) rotate(-20deg); opacity: 0; }

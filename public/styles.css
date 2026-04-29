@@ -151,9 +151,10 @@ html, body {
   position: relative;
   background: linear-gradient(160deg, var(--blue-700) 0%, var(--blue-900) 100%);
   border-radius: 1.2vw;
-  /* Asymmetric padding — extra room at the bottom so the YTD readout has
-     breathing space below the period subtitle. */
-  padding: 1vw 1.8vw 1.5vw 1.8vw;
+  /* Asymmetric padding — generous bottom room so the YTD readout never gets
+     clipped against the rounded corner. Top is tight to keep the eyebrow
+     anchored close to the number. */
+  padding: 0.9vw 1.8vw 2.2vw 1.8vw;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -193,25 +194,27 @@ html, body {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.4vh;
+  gap: 0.25vh;
   min-width: 0;
 }
 
 .hero-eyebrow {
-  font-size: min(1.15vw, 2.4vh);
+  font-size: min(1vw, 2vh);
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.75);
+  line-height: 1;
 }
 
 /* Cap by both vw and vh so the number can never overflow the hero row, even
-   when the browser window is short and the row height (26vh) is the
-   constraint instead of the column width. */
+   when the browser window is short and the row height is the constraint
+   instead of the column width. Reduced from 7vw to keep room below for the
+   period subtitle and YTD readout. */
 .hero-num {
-  font-size: min(7vw, 12.5vh);
+  font-size: min(5.4vw, 10vh);
   font-weight: 900;
-  line-height: 0.95;
+  line-height: 0.92;
   letter-spacing: -0.05em;
   color: var(--white);
   text-shadow: 0 0.3vw 1.5vw rgba(0, 0, 0, 0.25);
@@ -220,32 +223,34 @@ html, body {
 }
 
 .hero-period {
-  font-size: min(1.3vw, 2.6vh);
+  font-size: min(1.1vw, 2.2vh);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.92);
-  margin-top: -0.2vh;
+  margin-top: -0.1vh;
   text-transform: lowercase;
   letter-spacing: -0.005em;
+  line-height: 1.05;
 }
 
 .hero-ytd {
-  font-size: min(0.85vw, 1.8vh);
+  font-size: min(0.75vw, 1.55vh);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.55);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-top: 0.6vh;
+  margin-top: 0.4vh;
+  line-height: 1.1;
 }
 
 .hero-ytd span {
   font-weight: 900;
   color: var(--white);
-  font-size: min(0.95vw, 2vh);
+  font-size: min(0.85vw, 1.8vh);
 }
 
 .hero-icon {
-  width: 6.5vw;
-  height: 6.5vw;
+  width: min(5.5vw, 14vh);
+  height: min(5.5vw, 14vh);
   flex-shrink: 0;
   z-index: 1;
   display: flex;
@@ -253,7 +258,7 @@ html, body {
   justify-content: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.12);
-  padding: 1.2vw;
+  padding: 1vw;
   color: rgba(255, 255, 255, 0.95);
 }
 

@@ -7,8 +7,9 @@
 //   GOOGLE_SERVICE_ACCOUNT_EMAIL
 //   GOOGLE_SERVICE_ACCOUNT_KEY   (PEM, with real newlines OR \n-escaped OR base64-encoded)
 // Optional:
-//   DASHBOARD_TIMEZONE  (IANA TZ; defaults to "America/Los_Angeles" — controls which calendar month is "current")
-//   JOSEPH_TAB          (override the auto-computed "MM/YYYY" tab name in the Joseph - Tracking sheet)
+//   DASHBOARD_TIMEZONE   (IANA TZ; defaults to "America/Phoenix" — controls which calendar month is "current")
+//   JOSEPH_TAB           (override the auto-computed "MM/YYYY" tab name in the Joseph - Tracking sheet)
+//   SLACK_WEBHOOK_URL    (incoming webhook URL — if set, sends an alert when /api/metrics throws; throttled to 1/hour)
 
 import { google } from 'googleapis';
 
@@ -25,9 +26,42 @@ const TABS = {
   closed: 'closed',
 };
 
+// ===========================================================
+// Column mapping — single source of truth.
+// If a column moves in the source sheet, update the letter here ONLY.
+// Keep `docs/sheet-mapping.md` in sync when you change anything below.
+// History:
+//   2026-05  projected close: BK → BL (column inserted in source sheet)
+// ===========================================================
+const COLUMNS = {
+  // JOSEPH — Joseph - Tracking sheet, current-month tab
+  josephAcceptancesCell: 'B8', // metric #1: New Escrows (direct read)
+
+  // ESCROWS / acquisition escrows tab — data starts at row 9
+  acqEscrowsStatus: 'A',           // metric #2,3: status filters
+  acqEscrowsProjectedClose: 'BL',  // metric #4: projected-close dates
+  acqEscrowsDataStartRow: 9,
+
+  // ESCROWS / closed tab — data starts at row 6
+  closedDealType: 'M', // metric #5a,5b: "Purchase" filter
+  closedDate: 'S',     // metric #5b paired with M: close date
+  closedDataStartRow: 6,
+
+  // ESCROWS / listings tab — data starts at row 10
+  listingsStatus: 'A',     // metric #6,7,8,9a: status filters
+  listingsSoldDate: 'AS',  // metric #9b paired with A: sold date
+  listingsDataStartRow: 10,
+};
+
 const GOAL_CLOSINGS_PER_MONTH = 25;
 
-const TIMEZONE = process.env.DASHBOARD_TIMEZONE || 'America/Los_Angeles';
+const TIMEZONE = process.env.DASHBOARD_TIMEZONE || 'America/Phoenix';
+
+// Slack alerting (optional) — webhook is read from env, and we throttle in
+// memory so a sustained outage doesn't fire on every cron tick.
+const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
+const SLACK_THROTTLE_MS = 60 * 60 * 1000; // 1 hour
+let lastSlackNotifyAt = 0;
 
 // ---------- Date helpers ----------
 
@@ -139,6 +173,20 @@ function countNotEqNonEmpty(col, value) {
   }).length;
 }
 
+// Count non-empty rows whose value is NOT in any of the provided values
+// (case-insensitive). Used for "everything else" buckets like
+// In Shop / Coming Soon which is defined as the complement of Active /
+// Under Contract / Sold on the listings tab.
+function countNotInSetNonEmpty(col, values) {
+  const lowered = values.map((v) => asString(v).toLowerCase());
+  return col.filter((row) => {
+    if (!row) return false;
+    const cell = asString(row[0]);
+    if (cell === '') return false;
+    return !lowered.includes(cell.toLowerCase());
+  }).length;
+}
+
 function countDateInCurrentMonth(col) {
   return col.filter((row) => row && isCurrentMonth(row[0])).length;
 }
@@ -166,7 +214,7 @@ export default async function handler(req, res) {
     // --- Joseph sheet: cell B8 on the current month's tab ("MM/YYYY", e.g. "04/2026") ---
     // Override with JOSEPH_TAB env var if you ever need to point at a specific tab.
     const josephTab = process.env.JOSEPH_TAB || currentMonthTab();
-    const josephRange = `'${josephTab}'!B8`;
+    const josephRange = `'${josephTab}'!${COLUMNS.josephAcceptancesCell}`;
     let acceptancesAcq = 0;
     try {
       const [josephB8] = await batchGet(sheetsClient, SHEETS.joseph, [josephRange]);
@@ -178,19 +226,24 @@ export default async function handler(req, res) {
     }
 
     // --- Escrows sheet: one batchGet across every needed range ---
+    // All column letters + start rows are defined in the COLUMNS block at the
+    // top of this file. If a column moves in the sheet, edit it there ONLY.
+    const acqStart = COLUMNS.acqEscrowsDataStartRow;
+    const closedStart = COLUMNS.closedDataStartRow;
+    const listingsStart = COLUMNS.listingsDataStartRow;
     const escrowsRanges = [
-      // 0: acquisitions escrows column A (statuses) — data starts at row 9
-      `'${TABS.acquisitionsEscrows}'!A9:A`,
-      // 1: acquisitions escrows column BK (projected close dates) — data starts at row 9
-      `'${TABS.acquisitionsEscrows}'!BK9:BK`,
-      // 2: closed tab column M (deal type)
-      `'${TABS.closed}'!M6:M`,
-      // 3: closed tab column S (close date) — paired with M by row
-      `'${TABS.closed}'!S6:S`,
-      // 4: listings tab column A (statuses)
-      `'${TABS.listings}'!A10:A`,
-      // 5: listings tab column AS (sold date) — paired with A by row
-      `'${TABS.listings}'!AS10:AS`,
+      // 0: acquisitions escrows status column
+      `'${TABS.acquisitionsEscrows}'!${COLUMNS.acqEscrowsStatus}${acqStart}:${COLUMNS.acqEscrowsStatus}`,
+      // 1: acquisitions escrows projected-close date column
+      `'${TABS.acquisitionsEscrows}'!${COLUMNS.acqEscrowsProjectedClose}${acqStart}:${COLUMNS.acqEscrowsProjectedClose}`,
+      // 2: closed tab deal-type column
+      `'${TABS.closed}'!${COLUMNS.closedDealType}${closedStart}:${COLUMNS.closedDealType}`,
+      // 3: closed tab close-date column — paired with deal-type by row
+      `'${TABS.closed}'!${COLUMNS.closedDate}${closedStart}:${COLUMNS.closedDate}`,
+      // 4: listings tab status column
+      `'${TABS.listings}'!${COLUMNS.listingsStatus}${listingsStart}:${COLUMNS.listingsStatus}`,
+      // 5: listings tab sold-date column — paired with status by row
+      `'${TABS.listings}'!${COLUMNS.listingsSoldDate}${listingsStart}:${COLUMNS.listingsSoldDate}`,
     ];
     const [acqStatus, acqProjectedDate, closedDealType, closedDate, listingStatus, listingSoldDate] =
       await batchGet(sheetsClient, SHEETS.escrows, escrowsRanges);
@@ -215,8 +268,15 @@ export default async function handler(req, res) {
       (v) => isCurrentMonth(v),
     );
 
-    // 6. Renovations in Process — column A = "Reno In Process"
-    const renovationsInProcess = countEq(listingStatus, 'Reno In Process');
+    // 6. In Shop / Coming Soon — listings column A, anything that is NOT
+    // Active, Under Contract, or Sold (and not empty). Covers reno, prep,
+    // pre-listing, "coming soon", and any future intermediate status the
+    // team adds without needing a code change.
+    const inShopComingSoon = countNotInSetNonEmpty(listingStatus, [
+      'Active',
+      'Under Contract',
+      'Sold',
+    ]);
 
     // 7. Listings For Sale — column A = "Active"
     const listingsForSale = countEq(listingStatus, 'Active');
@@ -251,7 +311,7 @@ export default async function handler(req, res) {
         projectedClosingsMonth,
         closedAcqMonth,
         closedAcqYear,
-        renovationsInProcess,
+        inShopComingSoon,
         listingsForSale,
         underContractResale,
         closedResaleMonth,
@@ -271,6 +331,35 @@ export default async function handler(req, res) {
     res.status(200).json(payload);
   } catch (err) {
     console.error('[metrics] error', err);
+    // Fire-and-forget Slack alert (throttled to once per hour in memory).
+    // We don't await it — even if Slack is slow, the API response should
+    // still go out promptly so the dashboard can show its own error state.
+    notifySlackOnError(err).catch((slackErr) => {
+      console.warn('[metrics] slack notify failed:', slackErr.message);
+    });
     res.status(500).json({ error: err.message || 'Internal error' });
   }
+}
+
+// ---------- Slack alerting ----------
+
+// Posts a short failure message to the configured incoming webhook.
+// Throttled to once per hour per warm Lambda instance — sufficient for
+// catching incidents without spamming the channel during sustained outages.
+async function notifySlackOnError(err) {
+  if (!SLACK_WEBHOOK_URL) return;
+  const now = Date.now();
+  if (now - lastSlackNotifyAt < SLACK_THROTTLE_MS) return;
+  lastSlackNotifyAt = now;
+
+  const message = `:rotating_light: *Zoodealio dashboard /api/metrics failed*\n` +
+    `\`\`\`${(err && err.message) || String(err)}\`\`\`\n` +
+    `_The dashboard will keep retrying every 30 min during business hours._`;
+
+  // Native fetch is available in the Vercel Node 18+ runtime.
+  await fetch(SLACK_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: message }),
+  });
 }

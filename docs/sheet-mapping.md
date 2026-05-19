@@ -19,12 +19,13 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 ## Metric definitions
 
-### 1. Acceptances — Acquisition
+### 1. New Escrows — Acquisition
 
 - **Source**: `JOSEPH`, cell `B8`
 - **Logic**: direct read
-- **Display**: number, first tile on the acquisition side
+- **Display**: number, first tile on the acquisition side. Labelled **"New Escrows"** with "this month" subtitle.
 - **Animation**: subtle Zee peek on increase
+- **Note**: payload field still named `acceptancesAcq` to keep the JSON contract stable; only the UI label changed.
 
 ### 2. Inspection Acquisition
 
@@ -42,9 +43,10 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 ### 4. Projected Closings — Acquisition (month)
 
-- **Source**: `ESCROWS` → `acquisitions escrows` tab → column BK (range `BK9:BK`)
-- **Logic**: count rows where column BK is a date in the current calendar month
+- **Source**: `ESCROWS` → `acquisitions escrows` tab → column **BL** (range `BL9:BL`)
+- **Logic**: count rows where column BL is a date in the current calendar month
 - **Display**: number, fourth tile on the acquisition side
+- **History**: moved from column BK → BL in May 2026 when a column was inserted in the sheet. If it ever moves again, update `BL9:BL` in `api/metrics.js` (one line) and this doc.
 
 ### 5a. Closed — Acquisitions (year-to-date)
 
@@ -59,11 +61,12 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 - **Display**: hero number on the left side ("X closings this month")
 - **Animation**: full Zee pin-drop celebration on increase
 
-### 6. Renovations in Process
+### 6. In Shop / Coming Soon
 
 - **Source**: `ESCROWS` → `listings` tab → column A (range `A10:A`)
-- **Logic**: count rows where column A = "Reno In Process"
-- **Display**: number, center-bridge tile (between acquisition and resale)
+- **Logic**: count non-empty rows where column A is **NOT** one of `Active`, `Under Contract`, or `Sold` (case-insensitive). Captures reno, prep, pre-listing, "Coming Soon", and any future intermediate status the team adds without needing a code change.
+- **Display**: number, center-bridge tile (between acquisition and resale). Labelled **"In Shop / Coming Soon"** with "in progress" subtitle.
+- **Payload field**: `inShopComingSoon` (renamed from `renovationsInProcess` in May 2026).
 
 ### 7. Listings — For Sale
 

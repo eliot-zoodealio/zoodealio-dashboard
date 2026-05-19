@@ -24,7 +24,7 @@ const METRIC_KEYS = [
   'projectedClosingsMonth',
   'closedAcqMonth',
   'closedAcqYear',
-  'renovationsInProcess',
+  'inShopComingSoon',
   'listingsForSale',
   'underContractResale',
   'closedResaleMonth',
@@ -35,7 +35,7 @@ let lastSnapshot = null;
 let firstRender = true;
 let lastFetchAt = 0;
 let isFetching = false;
-let dashboardTz = 'America/Los_Angeles'; // overridden once /api/metrics responds
+let dashboardTz = 'America/Phoenix'; // Arizona time, no DST; overridden once /api/metrics responds
 let errorState = null; // when set, surfaced in the header label until next ok fetch
 
 // ---------- Fetch loop ----------
@@ -134,27 +134,30 @@ function formatCountdown(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-// Updates the upper-right header: shows when the next update will happen
-// and a live countdown to it. During business hours that's lastFetchAt + 30m;
+// Updates the upper-right header: big number is the CURRENT clock time
+// (so it matches a wall clock at a glance), with a small subtitle that
+// shows when the next refresh will run and a live countdown to it.
+// During business hours the next refresh is lastFetchAt + 30m;
 // off-hours it points at the next time business hours open.
 function updateRefreshCountdown() {
   const timeEl = document.getElementById('status-time');
   const labelEl = document.getElementById('status-label');
   if (!timeEl || !labelEl) return;
 
+  const now = Date.now();
   const inBiz = isBusinessHours();
   const nextMs = inBiz ? lastFetchAt + REFRESH_MS : nextBusinessOpenMs();
-  const remainingMs = Math.max(0, nextMs - Date.now());
+  const remainingMs = Math.max(0, nextMs - now);
 
-  // Big top line: the clock time of the next update (e.g. "9:00 AM" or
-  // "Mon 7:00 AM" when the next update is on a future day).
-  timeEl.textContent = formatClock(nextMs);
-  // Small bottom line: "next update · in 26:00" — or surface an error state
-  // until the next successful fetch clears it.
+  // Big top line: current clock time in the dashboard's timezone.
+  timeEl.textContent = formatClock(now);
+  // Small bottom line: "next update 5:15 PM · in 29:24" — or surface an
+  // error state until the next successful fetch clears it.
   if (errorState) {
     labelEl.textContent = errorState;
   } else {
-    labelEl.textContent = `next update · in ${formatCountdown(remainingMs)}`;
+    labelEl.textContent =
+      `next update ${formatClock(nextMs)} · in ${formatCountdown(remainingMs)}`;
   }
 }
 

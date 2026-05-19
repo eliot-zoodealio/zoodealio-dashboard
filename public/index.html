@@ -27,47 +27,55 @@
         <path d="M 34 65 Q 50 79 66 65" stroke="#1C1917" stroke-width="3" fill="none" stroke-linecap="round"/>
       </symbol>
 
+      <!-- Lucide / Heroicons inspired: consistent 2px stroke, rounded caps,
+           currentColor for theming. Keep IDs stable so HTML refs don't break. -->
       <symbol id="i-handshake" viewBox="0 0 32 32">
-        <path d="M5 16 L11 10 L16 14 L21 10 L27 16 L21 22 L16 18 L11 22 Z" fill="currentColor"/>
+        <path d="M3 14 L10 9 L14 11 L18 11 L22 9 L29 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14 11 L11 14 L13 16 L16 13 L18 16 L21 13 L22 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 14 L7 22 L11 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M29 14 L25 22 L21 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
       <symbol id="i-clipboard" viewBox="0 0 32 32">
-        <rect x="8" y="6" width="16" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-        <rect x="12" y="3" width="8" height="5" rx="1" fill="currentColor"/>
-        <line x1="12" y1="14" x2="20" y2="14" stroke="currentColor" stroke-width="2"/>
-        <line x1="12" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2"/>
-        <line x1="12" y1="22" x2="20" y2="22" stroke="currentColor" stroke-width="2"/>
+        <rect x="7" y="6" width="18" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <rect x="11" y="3" width="10" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="15" x2="20" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="20" x2="20" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="25" x2="17" y2="25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </symbol>
       <symbol id="i-check" viewBox="0 0 32 32">
-        <circle cx="16" cy="16" r="14" fill="#8FC043"/>
-        <path d="M9 16 L14 21 L23 11" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="16" cy="16" r="13" fill="#8FC043"/>
+        <path d="M9.5 16.5 L14 21 L23 12" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
       <symbol id="i-calendar" viewBox="0 0 32 32">
-        <rect x="5" y="8" width="22" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-        <line x1="5" y1="14" x2="27" y2="14" stroke="currentColor" stroke-width="2"/>
-        <line x1="11" y1="4" x2="11" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <line x1="21" y1="4" x2="21" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <rect x="4" y="7" width="24" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="4" y1="13" x2="28" y2="13" stroke="currentColor" stroke-width="2"/>
+        <line x1="11" y1="3" x2="11" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="21" y1="3" x2="21" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="11" cy="19" r="1.4" fill="currentColor"/>
+        <circle cx="16" cy="19" r="1.4" fill="currentColor"/>
+        <circle cx="21" cy="19" r="1.4" fill="currentColor"/>
+        <circle cx="11" cy="24" r="1.4" fill="currentColor"/>
+        <circle cx="16" cy="24" r="1.4" fill="currentColor"/>
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M16 9 L16 16 L21 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
       <symbol id="i-house-in" viewBox="0 0 32 32">
-        <path d="M16 4 L4 14 L4 28 L28 28 L28 14 Z" fill="currentColor"/>
-        <rect x="13" y="18" width="6" height="10" fill="white"/>
-        <circle cx="22" cy="9" r="2.5" fill="#8FC043"/>
-        <line x1="22" y1="9" x2="22" y2="14" stroke="#8FC043" stroke-width="2"/>
-      </symbol>
-      <symbol id="i-hammer" viewBox="0 0 32 32">
-        <g transform="rotate(-30 16 16)">
-          <rect x="6" y="11" width="14" height="6" rx="1" fill="currentColor"/>
-          <rect x="13" y="14" width="3" height="14" fill="currentColor"/>
-        </g>
+        <path d="M4 16 L16 5 L28 16 L28 27 L4 27 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M13 27 L13 19 L19 19 L19 27" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="23" cy="9" r="2" fill="#8FC043"/>
+        <path d="M23 11 L23 15" stroke="#8FC043" stroke-width="2" stroke-linecap="round"/>
       </symbol>
       <symbol id="i-tag" viewBox="0 0 32 32">
-        <path d="M4 4 L16 4 L28 16 L16 28 L4 16 Z" fill="currentColor"/>
-        <circle cx="10" cy="10" r="2" fill="white"/>
+        <path d="M16 4 L5 4 L5 15 L17 27 L28 16 L16 4 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="10" cy="10" r="2" fill="currentColor"/>
       </symbol>
       <symbol id="i-house-sold" viewBox="0 0 32 32">
-        <path d="M16 6 L5 15 L5 27 L27 27 L27 15 Z" fill="currentColor"/>
-        <rect x="13" y="19" width="6" height="8" fill="white"/>
-        <rect x="9" y="11" width="14" height="5" rx="0.5" fill="#8FC043"/>
-        <text x="16" y="15" text-anchor="middle" font-family="Nunito, sans-serif" font-size="4" font-weight="900" fill="white">SOLD</text>
+        <path d="M4 16 L16 5 L28 16 L28 27 L4 27 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M13 27 L13 19 L19 19 L19 27" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="8" y="11" width="16" height="6" rx="1" fill="#8FC043"/>
+        <text x="16" y="15.6" text-anchor="middle" font-family="Nunito, sans-serif" font-size="4.5" font-weight="900" fill="white">SOLD</text>
       </symbol>
     </defs>
   </svg>
@@ -86,7 +94,7 @@
         <div class="status-dot" id="status-dot"></div>
         <div class="status-text">
           <div class="status-time" id="status-time">—</div>
-          <div class="status-label" id="status-label">refreshes in <span id="refresh-countdown">30:00</span></div>
+          <div class="status-label" id="status-label">loading…</div>
         </div>
       </div>
     </header>
@@ -136,9 +144,9 @@
                alt=""
                onerror="this.outerHTML='<svg><use href=&quot;#i-handshake&quot;/></svg>'">
         </div>
-        <div class="strip-label">Acceptances</div>
+        <div class="strip-label">New Escrows</div>
         <div class="strip-num" data-metric="acceptancesAcq" data-celebrate="peek">0</div>
-        <div class="strip-sublabel">new this month</div>
+        <div class="strip-sublabel">this month</div>
       </div>
 
       <div class="strip-tile">
@@ -164,10 +172,10 @@
       </div>
 
       <div class="strip-tile">
-        <div class="strip-icon"><svg><use href="#i-hammer"/></svg></div>
-        <div class="strip-label">In Shop</div>
-        <div class="strip-num" data-metric="renovationsInProcess">0</div>
-        <div class="strip-sublabel">renovating</div>
+        <div class="strip-icon"><svg><use href="#i-clock"/></svg></div>
+        <div class="strip-label">In Shop / Coming Soon</div>
+        <div class="strip-num" data-metric="inShopComingSoon">0</div>
+        <div class="strip-sublabel">in progress</div>
       </div>
 
       <div class="strip-tile">
@@ -180,7 +188,7 @@
       <div class="strip-tile strip-checked strip-emphasis">
         <div class="strip-check"><svg><use href="#i-check"/></svg></div>
         <div class="strip-icon"><svg><use href="#i-tag"/></svg></div>
-        <div class="strip-label">Under Contract</div>
+        <div class="strip-label">Res. Under Contract</div>
         <div class="strip-num" data-metric="underContractResale">0</div>
         <div class="strip-sublabel">closing soon</div>
       </div>

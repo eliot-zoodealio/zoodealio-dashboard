@@ -127,7 +127,7 @@ html, body {
      Pipeline strip bumped to 22vh so split tiles (Addendums Sent, New Escrows,
      Projected Close) have room for their substat pill below the headline
      number. Hero + closings rows compressed slightly to balance. */
-  grid-template-rows: 6vh 22vh 3.5vh 22vh minmax(0, 1fr) 13vh 3.5vh;
+  grid-template-rows: 6vh 22vh 3.5vh 22vh minmax(0, 1fr) 16vh 3.5vh;
   padding: 0.8vh 1.4vw;
   gap: 0.8vh;
 }
@@ -811,13 +811,13 @@ html, body {
   border: 0.08vw solid var(--border-card);
   border-left: 0.25vw solid var(--green);
   border-radius: 1.2vw;
-  padding: 0.8vw 1.2vw;
+  padding: 0.6vw 1.1vw;
   min-height: 0;
   overflow: hidden;
   box-shadow: var(--shadow-card);
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 0.5vh;
+  gap: 0.4vh;
   transition: background 0.6s ease, border-color 0.6s ease;
 }
 
@@ -864,7 +864,7 @@ html, body {
 .closings-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.4vh 0.8vw;
+  gap: 0.3vh 0.7vw;
   min-height: 0;
   overflow: hidden;
 }
@@ -872,30 +872,30 @@ html, body {
 .closings-row {
   display: flex;
   align-items: center;
-  gap: 0.6vw;
+  gap: 0.5vw;
   background: var(--bg-card-emphasis);
   border: 0.06vw solid var(--border-faint);
-  border-radius: 0.6vw;
-  padding: 0.45vh 0.7vw;
+  border-radius: 0.5vw;
+  padding: 0.3vh 0.6vw;
   min-width: 0;
 }
 
 .closings-day {
   flex-shrink: 0;
-  font-size: min(0.7vw, 1.5vh);
+  font-size: min(0.6vw, 1.3vh);
   font-weight: 800;
   letter-spacing: 0.06em;
   background: var(--tint-acq-bg);
   color: var(--tint-acq-text);
-  padding: 0.25vh 0.55vw;
-  border-radius: 0.4vw;
-  min-width: 2.4vw;
+  padding: 0.2vh 0.45vw;
+  border-radius: 0.35vw;
+  min-width: 2.2vw;
   text-align: center;
 }
 
 .closings-address {
   flex: 1;
-  font-size: min(0.9vw, 1.9vh);
+  font-size: min(0.78vw, 1.65vh);
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.005em;
@@ -907,11 +907,11 @@ html, body {
 
 .closings-type {
   flex-shrink: 0;
-  font-size: min(0.65vw, 1.4vh);
+  font-size: min(0.55vw, 1.2vh);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 0.25vh 0.55vw;
+  padding: 0.2vh 0.5vw;
   border-radius: 999px;
 }
 

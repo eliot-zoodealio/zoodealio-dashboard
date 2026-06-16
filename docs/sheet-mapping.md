@@ -19,13 +19,14 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 ## Metric definitions
 
-### 1. New Escrows — Acquisition
+### 1. New Escrows — Acquisition (week + month)
 
-- **Source**: `JOSEPH`, cell `B8`
-- **Logic**: direct read
-- **Display**: number, first tile on the acquisition side. Labelled **"New Escrows"** with "this month" subtitle.
-- **Animation**: subtle Zee peek on increase
-- **Note**: payload field still named `acceptancesAcq` to keep the JSON contract stable; only the UI label changed.
+- **Source**: `JOSEPH`, current month tab (`MM/YYYY`)
+  - **Month** (`acceptancesAcq`): direct read of cell **B8** (existing).
+  - **Week** (`acceptancesWeek`): open-ended read of columns **A:B**, then sum the values in column B for rows whose column A contains a date in the current **Monday–Friday** business week (Arizona time). Skips header / label rows (Goal, Total, Weekly Perc., Week N) naturally because only rows whose A cell parses as a date contribute.
+- **Display**: first tile on the acquisition side. Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom (`Mo · 31`).
+- **Animation**: subtle Zee peek on increase, fires on the **weekly** count.
+- **Edge case**: if a Mon-Fri week crosses a month boundary (e.g. Mon Jun 29 – Fri Jul 3), the weekly sum only includes days in the tab we read. The team's convention of putting cross-month rows in the tab named for the week's end-Friday month means the data is usually available in the tab we'd expect. If this becomes an issue, we can extend the API to read both the current and next month tabs.
 
 ### 2. Inspection Acquisition
 

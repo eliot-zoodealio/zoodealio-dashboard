@@ -249,6 +249,23 @@ function countDateInWeek(col, week) {
   return col.filter((row) => row && isInMonFriWeek(cellToDate(row[0]), week)).length;
 }
 
+// Sums column B values for any row where column A contains a date in the
+// current Mon-Fri business week. Used by the New Escrows weekly count which
+// reads the Joseph tracking sheet's daily rows. Skips header / label rows
+// naturally because only rows whose A cell parses as a date contribute.
+// `rows` is the [A, B] pair returned by the Sheets API for a range like A:B.
+function sumByDateInWeek(rows, week) {
+  let sum = 0;
+  for (const row of rows) {
+    if (!row || row.length < 2) continue;
+    const dateObj = cellToDate(row[0]);
+    if (!isInMonFriWeek(dateObj, week)) continue;
+    const val = Number(row[1]);
+    if (Number.isFinite(val)) sum += val;
+  }
+  return sum;
+}
+
 // Paired-row predicate (two columns of the same length, match by row index).
 function countPaired(primary, secondary, primaryPred, secondaryPred) {
   const n = Math.max(primary.length, secondary.length);
@@ -269,18 +286,32 @@ export default async function handler(req, res) {
     await auth.authorize();
     const sheetsClient = google.sheets({ version: 'v4', auth });
 
-    // --- Joseph sheet: cell B8 on the current month's tab ("MM/YYYY", e.g. "04/2026") ---
-    // Override with JOSEPH_TAB env var if you ever need to point at a specific tab.
+    // --- Joseph sheet ---
+    // Two reads against the current month's tab ("MM/YYYY", e.g. "06/2026"):
+    //   1) B8           — monthly New Escrows total (existing — same as before)
+    //   2) A:B (open)   — daily rows so we can sum the current Mon-Fri week
+    // Override the tab name with JOSEPH_TAB env var if needed.
     const josephTab = process.env.JOSEPH_TAB || currentMonthTab();
     const josephRange = `'${josephTab}'!${COLUMNS.josephAcceptancesCell}`;
+    const josephDailyRange = `'${josephTab}'!A:B`;
     let acceptancesAcq = 0;
+    let acceptancesWeek = 0;
     try {
-      const [josephB8] = await batchGet(sheetsClient, SHEETS.joseph, [josephRange]);
+      const [josephB8, josephDaily] = await batchGet(
+        sheetsClient,
+        SHEETS.joseph,
+        [josephRange, josephDailyRange],
+      );
       acceptancesAcq = Number(josephB8?.[0]?.[0] ?? 0) || 0;
+      // Mon-Fri week sum from daily rows. Week boundaries get computed below
+      // (see `week` declaration). We pre-compute it inline here so this read
+      // can complete before we need it elsewhere.
+      const _josephWeek = currentMonFriWeek();
+      acceptancesWeek = sumByDateInWeek(josephDaily || [], _josephWeek);
     } catch (err) {
       // If the monthly tab doesn't exist yet (e.g. at the very start of a new month), keep 0
       // rather than failing the whole response. New month → make the tab → numbers light up.
-      console.warn(`[metrics] could not read ${josephRange}: ${err.message}`);
+      console.warn(`[metrics] could not read joseph ranges: ${err.message}`);
     }
 
     // --- Escrows sheet: one batchGet across every needed range ---
@@ -401,6 +432,7 @@ export default async function handler(req, res) {
       josephTab,
       metrics: {
         acceptancesAcq,
+        acceptancesWeek,
         inspectionAcq,
         inspectionAccepted,
         projectedClosingsMonth,

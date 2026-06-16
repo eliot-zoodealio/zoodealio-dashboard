@@ -153,15 +153,19 @@
 
     <!-- ============ PIPELINE STRIP ============ -->
     <section class="pipeline-strip">
-      <div class="strip-tile">
+      <div class="strip-tile strip-tile-split">
         <div class="strip-icon">
           <img src="/assets/acceptance-icon.png"
                alt=""
                onerror="this.outerHTML='<svg><use href=&quot;#i-handshake&quot;/></svg>'">
         </div>
         <div class="strip-label">New Escrows</div>
-        <div class="strip-num" data-metric="acceptancesAcq" data-celebrate="peek">0</div>
-        <div class="strip-sublabel">this month</div>
+        <div class="strip-num" data-metric="acceptancesWeek" data-celebrate="peek">0</div>
+        <div class="strip-sublabel">this week</div>
+        <div class="strip-substat">
+          <span class="strip-substat-label">Mo</span>
+          <span class="strip-substat-value" data-metric="acceptancesAcq">0</span>
+        </div>
       </div>
 
       <div class="strip-tile">

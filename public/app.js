@@ -19,6 +19,7 @@ const BUSINESS_HOUR_END = 18;   // 6:00 PM (exclusive — last refresh at 5:30pm
 
 const METRIC_KEYS = [
   'acceptancesAcq',
+  'acceptancesWeek',
   'inspectionAcq',
   'inspectionAccepted',
   'projectedClosingsMonth',

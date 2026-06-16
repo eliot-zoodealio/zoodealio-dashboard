@@ -435,7 +435,11 @@ function formatWeekRange(tz) {
   const wk = parts.find((p) => p.type === 'weekday').value;
   const wkIdx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wk);
   const daysSinceMon = wkIdx === 0 ? 6 : wkIdx - 1;
-  const todayUtc = Date.UTC(y, m - 1, d);
+  // Build the Date objects at NOON UTC instead of midnight. Any US timezone
+  // (UTC-5 to UTC-10) will resolve noon UTC to the same calendar day, so
+  // formatting in Phoenix won't roll back to the previous day.
+  const NOON_UTC_OFFSET = 12 * 60 * 60 * 1000;
+  const todayUtc = Date.UTC(y, m - 1, d) + NOON_UTC_OFFSET;
   const mon = new Date(todayUtc - daysSinceMon * 86400000);
   const fri = new Date(todayUtc + (4 - daysSinceMon) * 86400000);
   return `${fmt(mon)} – ${fmt(fri)}`;

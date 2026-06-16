@@ -127,7 +127,7 @@ html, body {
      Pipeline strip bumped to 22vh so split tiles (Addendums Sent, New Escrows,
      Projected Close) have room for their substat pill below the headline
      number. Hero + closings rows compressed slightly to balance. */
-  grid-template-rows: 6vh 22vh 3.5vh 22vh minmax(0, 1fr) 16vh 3.5vh;
+  grid-template-rows: 6vh 22vh 3.5vh 22vh minmax(0, 1fr) 15vh 3.5vh;
   padding: 0.8vh 1.4vw;
   gap: 0.8vh;
 }
@@ -761,20 +761,20 @@ html, body {
 
 /* ---- Year-to-Date card ---- */
 
-.card-ytd { gap: 0.4vh; }
+.card-ytd { gap: 0.2vh; }
 
 .ytd-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0.7vh 0;
+  padding: 0.35vh 0;
   border-bottom: 0.05vw solid var(--border-faint);
 }
 
 .ytd-row:last-child { border-bottom: none; }
 
 .ytd-label {
-  font-size: min(0.95vw, 2vh);
+  font-size: min(0.85vw, 1.8vh);
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -782,7 +782,7 @@ html, body {
 }
 
 .ytd-value {
-  font-size: min(1.8vw, 4vh);
+  font-size: min(1.5vw, 3.2vh);
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
@@ -791,8 +791,8 @@ html, body {
 
 .ytd-total-row {
   border-top: 0.12vw solid var(--border-emphasis);
-  margin-top: 0.4vh;
-  padding-top: 1vh;
+  margin-top: 0.2vh;
+  padding-top: 0.5vh;
 }
 
 .ytd-total-row .ytd-label {
@@ -800,7 +800,7 @@ html, body {
 }
 
 .ytd-total-row .ytd-value {
-  font-size: min(2.2vw, 4.8vh);
+  font-size: min(1.8vw, 3.8vh);
   color: var(--green);
 }
 

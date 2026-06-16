@@ -41,12 +41,15 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 - **Equivalent formula**: `=COUNTIF(A:A,"Closing") + COUNTIF(A:A,"Need Funding")`
 - **Display**: number with green checkmark, third tile on the acquisition side
 
-### 4. Projected Closings — Acquisition (month)
+### 4. Projected Closings — Acquisition (week + month)
 
 - **Source**: `ESCROWS` → `acquisitions escrows` tab → column **BL** (range `BL9:BL`)
-- **Logic**: count rows where column BL is a date in the current calendar month
-- **Display**: number, fourth tile on the acquisition side
-- **History**: moved from column BK → BL in May 2026 when a column was inserted in the sheet. If it ever moves again, update `BL9:BL` in `api/metrics.js` (one line) and this doc.
+- **Logic**:
+  - **Week**: count rows where column BL is a date in the current **Monday–Friday** business week (Arizona time)
+  - **Month**: count rows where column BL is a date in the current calendar month
+- **Payload fields**: `projectedClosingsWeek` (big number on tile), `projectedClosingsMonth` (small substat at bottom).
+- **Display**: fourth tile on the acquisition side. Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom of the tile.
+- **History**: moved from column BK → BL in May 2026. Week/month split added in June 2026. If the column ever moves again, update the COLUMNS block in `api/metrics.js` (one line) and this doc.
 
 ### 5a. Closed — Acquisitions (year-to-date)
 

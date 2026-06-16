@@ -242,6 +242,13 @@ function countDateInCurrentMonth(col) {
   return col.filter((row) => row && isCurrentMonth(row[0])).length;
 }
 
+// Count rows whose date cell falls in the supplied Mon-Fri week boundaries.
+// `week` comes from currentMonFriWeek() — pass it in so we compute boundaries
+// only once per request.
+function countDateInWeek(col, week) {
+  return col.filter((row) => row && isInMonFriWeek(cellToDate(row[0]), week)).length;
+}
+
 // Paired-row predicate (two columns of the same length, match by row index).
 function countPaired(primary, secondary, primaryPred, secondaryPred) {
   const n = Math.max(primary.length, secondary.length);
@@ -308,8 +315,15 @@ export default async function handler(req, res) {
     // 3. Inspection Accepted Acq — column A = "Closing" or "Need Funding"
     const inspectionAccepted = countEq(acqStatus, 'Closing') + countEq(acqStatus, 'Need Funding');
 
-    // 4. Projected Closings Acq (month) — column BK date is in current month
+    // Pre-compute the current Mon-Fri week boundaries once; we'll reuse for
+    // both metric #4 (Projected Closings week) and the Closing This Week card.
+    const week = currentMonFriWeek();
+
+    // 4. Projected Closings Acq — column BL date filtering
+    //    - Month: any date this calendar month
+    //    - Week:  any date in the current Mon-Fri business week
     const projectedClosingsMonth = countDateInCurrentMonth(acqProjectedDate);
+    const projectedClosingsWeek = countDateInWeek(acqProjectedDate, week);
 
     // 5a. Closed Acquisitions (year) — column M contains "Purchase"
     const closedAcqYear = countContains(closedDealType, 'purchase');
@@ -352,8 +366,8 @@ export default async function handler(req, res) {
     // Closing This Week — read the `closed` tab as a single source of truth.
     // For every row whose Type column contains "Purchase" or "Resale" AND
     // whose COE date is in the current Monday-Friday week, emit
-    // { address, type, day, dateMs }. Sorted by date ascending.
-    const week = currentMonFriWeek();
+    // { address, type, day, dateMs }. Sorted by date ascending. Uses the
+    // same `week` boundaries computed above for metric #4.
     const closingsThisWeek = [];
     const closedRowCount = Math.max(closedDealType.length, closedDate.length, closedAddress.length);
     for (let i = 0; i < closedRowCount; i++) {
@@ -390,6 +404,7 @@ export default async function handler(req, res) {
         inspectionAcq,
         inspectionAccepted,
         projectedClosingsMonth,
+        projectedClosingsWeek,
         closedAcqMonth,
         closedAcqYear,
         inShopComingSoon,

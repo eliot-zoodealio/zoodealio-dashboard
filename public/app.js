@@ -22,6 +22,7 @@ const METRIC_KEYS = [
   'inspectionAcq',
   'inspectionAccepted',
   'projectedClosingsMonth',
+  'projectedClosingsWeek',
   'closedAcqMonth',
   'closedAcqYear',
   'inShopComingSoon',

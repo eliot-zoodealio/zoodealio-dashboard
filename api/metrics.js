@@ -424,14 +424,20 @@ export default async function handler(req, res) {
     // 8. Under Contract Resale — column A = "Under Contract"
     const underContractResale = countEq(listingStatus, 'Under Contract');
 
-    // 9a. Closed Resale (year) — column A = "Sold" (2026-only sheet)
-    const closedResaleYear = countEq(listingStatus, 'Sold');
+    // 9a. Closed Resale (year) — closed tab, column M contains "resale"
+    //     (matches "CO+ Resale", "C+ Resale", "Flip Resale", etc.). Listings
+    //     tab isn't authoritative because not every closed resale gets its
+    //     listings row flipped to "Sold"; the closed tab is the single source
+    //     of truth for actual closings.
+    const closedResaleYear = countContains(closedDealType, 'resale');
 
-    // 9b. Closed Resale (month) — A = "Sold" AND AS is a date in current month
+    // 9b. Closed Resale (month) — closed tab, M contains "resale" AND S is
+    //     a date in the current calendar month. Mirrors the acquisitions
+    //     logic, just swaps "purchase" for "resale".
     const closedResaleMonth = countPaired(
-      listingStatus,
-      listingSoldDate,
-      (v) => eqCI(v, 'Sold'),
+      closedDealType,
+      closedDate,
+      (v) => containsCI(v, 'resale'),
       (v) => isCurrentMonth(v),
     );
 

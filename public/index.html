@@ -64,6 +64,21 @@
       <symbol id="i-paper-plane" viewBox="0 0 32 32">
         <path d="M28 4 L4 14 L13 18 L17 27 Z M13 18 L28 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
+      <symbol id="i-file-plus" viewBox="0 0 32 32">
+        <path d="M8 4 L20 4 L26 10 L26 28 L8 28 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M20 4 L20 10 L26 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="17" y1="16" x2="17" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="13" y1="20" x2="21" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-shield-check" viewBox="0 0 32 32">
+        <path d="M16 4 L26 8 L26 16 C26 22 22 27 16 29 C10 27 6 22 6 16 L6 8 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M11 16 L14.5 19.5 L21 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-tag-check" viewBox="0 0 32 32">
+        <path d="M16 4 L5 4 L5 15 L17 27 L28 16 L16 4 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="10" cy="10" r="1.6" fill="currentColor"/>
+        <path d="M11.5 16 L14 18.5 L19 13.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
       <symbol id="i-house-in" viewBox="0 0 32 32">
         <path d="M4 16 L16 5 L28 16 L28 27 L4 27 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
         <path d="M13 27 L13 19 L19 19 L19 27" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -168,11 +183,7 @@
       </div>
 
       <div class="strip-tile strip-tile-split">
-        <div class="strip-icon">
-          <img src="/assets/acceptance-icon.png"
-               alt=""
-               onerror="this.outerHTML='<svg><use href=&quot;#i-handshake&quot;/></svg>'">
-        </div>
+        <div class="strip-icon"><svg><use href="#i-file-plus"/></svg></div>
         <div class="strip-label">New Escrows</div>
         <div class="strip-num" data-metric="acceptancesWeek" data-celebrate="peek">0</div>
         <div class="strip-sublabel">this week</div>
@@ -191,7 +202,7 @@
 
       <div class="strip-tile strip-checked">
         <div class="strip-check"><svg><use href="#i-check"/></svg></div>
-        <div class="strip-icon"><svg><use href="#i-clipboard"/></svg></div>
+        <div class="strip-icon"><svg><use href="#i-shield-check"/></svg></div>
         <div class="strip-label">Insp. Accepted</div>
         <div class="strip-num" data-metric="inspectionAccepted">0</div>
         <div class="strip-sublabel">cleared</div>
@@ -224,7 +235,7 @@
 
       <div class="strip-tile strip-checked strip-emphasis">
         <div class="strip-check"><svg><use href="#i-check"/></svg></div>
-        <div class="strip-icon"><svg><use href="#i-tag"/></svg></div>
+        <div class="strip-icon"><svg><use href="#i-tag-check"/></svg></div>
         <div class="strip-label">Res. Under Contract</div>
         <div class="strip-num" data-metric="underContractResale">0</div>
         <div class="strip-sublabel">closing soon</div>

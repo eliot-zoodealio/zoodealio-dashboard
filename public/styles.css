@@ -123,11 +123,11 @@ html, body {
   width: 100vw;
   height: 100vh;
   display: grid;
-  /* Row budget: 6 + 23 + 3.5 + 19 + minmax(0,1fr for bottom row) + 14 + 3.5
-     = ~69vh fixed + spacing. The bottom row (Goal/Days/YTD) absorbs slack;
-     the Closing-This-Week row is fixed at 14vh so it doesn't grow into the
-     footer when there are many closings. */
-  grid-template-rows: 6vh 23vh 3.5vh 19vh minmax(0, 1fr) 14vh 3.5vh;
+  /* Row budget: 6 + 22 + 3.5 + 22 + minmax(0,1fr) + 13 + 3.5 = ~70vh fixed.
+     Pipeline strip bumped to 22vh so split tiles (Addendums Sent, New Escrows,
+     Projected Close) have room for their substat pill below the headline
+     number. Hero + closings rows compressed slightly to balance. */
+  grid-template-rows: 6vh 22vh 3.5vh 22vh minmax(0, 1fr) 13vh 3.5vh;
   padding: 0.8vh 1.4vw;
   gap: 0.8vh;
 }
@@ -508,9 +508,16 @@ html, body {
   margin-top: 0.2vh;
 }
 
-/* Split tiles (Projected Close, Addendums Sent, New Escrows in commits 3-5)
-   stack: icon → label → big-num (week) → sublabel → substat-pill (month). */
-.strip-tile-split .strip-num { margin-top: 0.4vh; }
+/* Split tiles (Projected Close, Addendums Sent, New Escrows) stack:
+   icon → label → big-num (week) → sublabel → substat-pill (month).
+   Headline number is slightly smaller than regular tiles to leave room
+   for the substat without clipping. */
+.strip-tile-split .strip-num {
+  margin-top: 0.3vh;
+  font-size: min(3vw, 6vh);
+}
+
+.strip-tile-split .strip-sublabel { margin-top: 0.1vh; }
 
 .strip-substat {
   margin-top: auto;
@@ -521,11 +528,11 @@ html, body {
   gap: 0.4vw;
   background: var(--tint-future-bg);
   border-radius: 0.4vw;
-  padding: 0.35vh 0.55vw;
+  padding: 0.3vh 0.55vw;
 }
 
 .strip-substat-label {
-  font-size: min(0.65vw, 1.35vh);
+  font-size: min(0.6vw, 1.25vh);
   font-weight: 700;
   color: var(--tint-future-text);
   text-transform: uppercase;
@@ -533,7 +540,7 @@ html, body {
 }
 
 .strip-substat-value {
-  font-size: min(1.1vw, 2.3vh);
+  font-size: min(1vw, 2.1vh);
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.02em;

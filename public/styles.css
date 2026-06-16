@@ -1,26 +1,105 @@
 /* =====================================================
    Zoodealio Office Dashboard — landscape 16:9 kiosk view
-   Layout: stacked sections (header, hero, pipeline strip,
-   bottom row of three cards, footer). All sizes use vw/vh
-   so it scales cleanly between TV resolutions.
+   Color-themed via CSS variables. data-theme="light" is
+   default; data-theme="dark" overrides the palette
+   automatically via the time-of-day switcher in app.js
+   (6am–7pm = light, 7pm–6am = dark, Arizona time).
 ===================================================== */
 
 :root {
-  --blue-50: #EBF2FA;
-  --blue-100: #D4E4F2;
-  --blue-200: #B5D0EC;
-  --blue-300: #8CB4E0;
-  --blue-500: #3D6FB5;
-  --blue-600: #1A5EBF;
-  --blue-700: #0E50B0;
-  --blue-900: #0A3D82;
+  /* Brand constants — same across both themes */
   --green: #8FC043;
   --green-light: #B5DC6E;
-  --ink: #0A1F3D;
-  --white: #FFFFFF;
-  --shadow-sm: 0 0.2vw 0.6vw rgba(10, 61, 130, 0.06);
-  --shadow: 0 0.3vw 1vw rgba(10, 61, 130, 0.08);
-  --shadow-lg: 0 0.6vw 2vw rgba(10, 61, 130, 0.18);
+  --green-deep: #6FA02E;
+  --green-faint: rgba(143, 192, 67, 0.1);
+  --blue-accent: #4A8FE0;
+  --blue-faint: rgba(74, 143, 224, 0.1);
+  --purple-accent: #9F7EE9;
+  --purple-faint: rgba(159, 126, 233, 0.1);
+  --red-warn: #E24B4A;
+
+  /* ---------- LIGHT MODE (default) ---------- */
+  --bg-page: linear-gradient(180deg, #F5F8FB 0%, #E8EFF7 100%);
+  --bg-card: #FFFFFF;
+  --bg-card-emphasis: #EBF2FA;
+  --bg-track: #EBF2FA;
+  --bg-hero: linear-gradient(160deg, #0E50B0 0%, #0A3D82 100%);
+
+  --text-primary: #0A1F3D;
+  --text-secondary: #3D6FB5;
+  --text-tertiary: #8CB4E0;
+  --text-hero: #FFFFFF;
+  --text-hero-muted: rgba(255, 255, 255, 0.72);
+  --text-hero-faint: rgba(255, 255, 255, 0.55);
+
+  --border-card: rgba(10, 30, 80, 0.08);
+  --border-emphasis: rgba(10, 30, 80, 0.16);
+  --border-faint: rgba(10, 30, 80, 0.04);
+
+  --tint-acq-bg: rgba(74, 143, 224, 0.08);
+  --tint-acq-strong: rgba(74, 143, 224, 0.18);
+  --tint-acq-text: #185FA5;
+  --tint-resale-bg: rgba(143, 192, 67, 0.1);
+  --tint-resale-strong: rgba(143, 192, 67, 0.22);
+  --tint-resale-text: #3B6D11;
+  --tint-future-bg: rgba(159, 126, 233, 0.1);
+  --tint-future-strong: rgba(159, 126, 233, 0.22);
+  --tint-future-text: #5C4DB5;
+
+  --pill-live-bg: rgba(143, 192, 67, 0.16);
+  --pill-live-text: #3B6D11;
+  --pill-pace-elite-bg: rgba(143, 192, 67, 0.18);
+  --pill-pace-elite-text: #3B6D11;
+  --pill-pace-on-bg: rgba(74, 143, 224, 0.15);
+  --pill-pace-on-text: #185FA5;
+  --pill-pace-behind-bg: rgba(226, 75, 74, 0.15);
+  --pill-pace-behind-text: #A32D2D;
+
+  --shadow-card: 0 0.2vw 0.6vw rgba(10, 61, 130, 0.06);
+  --shadow-hero: 0 0.6vw 2vw rgba(10, 61, 130, 0.18);
+  --shadow-text: 0 0.3vw 1.5vw rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] {
+  --bg-page: linear-gradient(180deg, #06101F 0%, #020B17 100%);
+  --bg-card: #0E1B33;
+  --bg-card-emphasis: #142342;
+  --bg-track: #06101F;
+  --bg-hero: linear-gradient(135deg, #0E1B33 0%, #091428 100%);
+
+  --text-primary: #F3F6FA;
+  --text-secondary: #8B9DBD;
+  --text-tertiary: #5A6F95;
+  --text-hero: #F3F6FA;
+  --text-hero-muted: rgba(243, 246, 250, 0.75);
+  --text-hero-faint: rgba(243, 246, 250, 0.5);
+
+  --border-card: rgba(255, 255, 255, 0.06);
+  --border-emphasis: rgba(255, 255, 255, 0.1);
+  --border-faint: rgba(255, 255, 255, 0.04);
+
+  --tint-acq-bg: rgba(74, 143, 224, 0.1);
+  --tint-acq-strong: rgba(74, 143, 224, 0.22);
+  --tint-acq-text: #7AB3F0;
+  --tint-resale-bg: rgba(143, 192, 67, 0.1);
+  --tint-resale-strong: rgba(143, 192, 67, 0.22);
+  --tint-resale-text: #B5DC6E;
+  --tint-future-bg: rgba(159, 126, 233, 0.12);
+  --tint-future-strong: rgba(159, 126, 233, 0.25);
+  --tint-future-text: #B5A8F0;
+
+  --pill-live-bg: rgba(143, 192, 67, 0.14);
+  --pill-live-text: #B5DC6E;
+  --pill-pace-elite-bg: rgba(143, 192, 67, 0.16);
+  --pill-pace-elite-text: #B5DC6E;
+  --pill-pace-on-bg: rgba(74, 143, 224, 0.16);
+  --pill-pace-on-text: #7AB3F0;
+  --pill-pace-behind-bg: rgba(226, 75, 74, 0.18);
+  --pill-pace-behind-text: #F09595;
+
+  --shadow-card: 0 0.2vw 0.6vw rgba(0, 0, 0, 0.35);
+  --shadow-hero: 0 0.6vw 2vw rgba(0, 0, 0, 0.45);
+  --shadow-text: 0 0.3vw 1.5vw rgba(0, 0, 0, 0.5);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,24 +108,24 @@ html, body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(180deg, #F5F8FB 0%, #E8EFF7 100%);
-  color: var(--ink);
-  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 600;
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
   user-select: none;
   cursor: none;
+  transition: background 0.6s ease, color 0.6s ease;
 }
 
 .dashboard {
   width: 100vw;
   height: 100vh;
   display: grid;
-  /* Row budget: 6 + 24 + 3.5 + 21 + minmax(0, 1fr) + 3.5 = 58vh fixed
-     + 5 × 0.8vh gap + 2 × 0.8vh padding = 5.6vh of spacing
-     Total fixed: 63.6vh, leaving ~36vh for the bottom row to absorb. The
-     minmax(0, 1fr) lets the bottom row shrink if the viewport is short
-     instead of overflowing into the footer. */
+  /* Row budget: 6 + 24 + 3.5 + 21 + minmax(0,1fr) + 3.5 = ~58vh fixed
+     + ~5.6vh spacing. The bottom row absorbs slack and shrinks if the
+     viewport is short rather than overflowing into the footer. */
   grid-template-rows: 6vh 24vh 3.5vh 21vh minmax(0, 1fr) 3.5vh;
   padding: 0.8vh 1.4vw;
   gap: 0.8vh;
@@ -76,67 +155,85 @@ html, body {
 }
 
 .brand-fallback {
-  font-family: 'Nunito', sans-serif;
-  font-weight: 900;
-  font-size: 2.4vw;
-  color: var(--blue-600);
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  font-size: 2.2vw;
+  color: var(--green);
+  letter-spacing: -0.03em;
 }
 
 .brand-tagline {
-  font-size: 1.1vw;
-  font-weight: 700;
-  color: var(--blue-300);
-  letter-spacing: 0.02em;
+  font-size: 1vw;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: -0.005em;
   padding-left: 0.6vw;
-  border-left: 0.15vw solid var(--blue-100);
+  border-left: 0.15vw solid var(--border-emphasis);
   line-height: 1;
 }
 
 .status {
   display: flex;
   align-items: center;
-  gap: 0.7vw;
+  gap: 0.9vw;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4vw;
+  background: var(--pill-live-bg);
+  border: 0.1vw solid var(--pill-live-text);
+  border-color: rgba(143, 192, 67, 0.3);
+  padding: 0.3vh 0.7vw;
+  border-radius: 999px;
 }
 
 .status-dot {
-  width: 0.7vw;
-  height: 0.7vw;
+  width: 0.55vw;
+  height: 0.55vw;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 0 0.25vw rgba(143, 192, 67, 0.25);
+  box-shadow: 0 0 0.5vw var(--green);
   animation: pulse 2.2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0.25vw rgba(143, 192, 67, 0.25); }
-  50% { box-shadow: 0 0 0 0.55vw rgba(143, 192, 67, 0.05); }
+  0%, 100% { box-shadow: 0 0 0.4vw var(--green); opacity: 1; }
+  50% { box-shadow: 0 0 0.9vw var(--green); opacity: 0.7; }
 }
 
 .status-dot.error {
-  background: #E74C3C;
-  box-shadow: 0 0 0 0.25vw rgba(231, 76, 60, 0.25);
+  background: var(--red-warn);
+  box-shadow: 0 0 0.5vw var(--red-warn);
   animation: none;
+}
+
+.status-pill-label {
+  font-size: 0.78vw;
+  font-weight: 700;
+  color: var(--pill-live-text);
+  letter-spacing: 0.06em;
 }
 
 .status-text {
   text-align: right;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .status-time {
-  font-size: 1.2vw;
+  font-size: 1.3vw;
   font-weight: 800;
-  color: var(--blue-900);
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .status-label {
-  font-size: 0.75vw;
-  font-weight: 700;
+  font-size: 0.7vw;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--blue-300);
-  margin-top: 0.1vh;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-top: 0.15vh;
 }
 
 /* ============ HERO ROW ============ */
@@ -149,20 +246,19 @@ html, body {
 
 .hero {
   position: relative;
-  background: linear-gradient(160deg, var(--blue-700) 0%, var(--blue-900) 100%);
+  background: var(--bg-hero);
+  border: 0.08vw solid var(--border-card);
   border-radius: 1.2vw;
-  /* Asymmetric padding — generous bottom room so the YTD readout never gets
-     clipped against the rounded corner. Top is tight to keep the eyebrow
-     anchored close to the number. */
-  padding: 0.9vw 1.8vw 2.2vw 1.8vw;
+  padding: 0.9vw 1.8vw 1.5vw 1.8vw;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 1.6vw;
-  color: var(--white);
-  box-shadow: var(--shadow-lg);
+  color: var(--text-hero);
+  box-shadow: var(--shadow-hero);
   overflow: hidden;
   min-height: 0;
+  transition: background 0.6s ease;
 }
 
 .hero::before {
@@ -173,7 +269,7 @@ html, body {
   width: 18vw;
   height: 18vw;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   pointer-events: none;
 }
 
@@ -185,7 +281,7 @@ html, body {
   width: 12vw;
   height: 12vw;
   border-radius: 50%;
-  background: rgba(143, 192, 67, 0.07);
+  background: rgba(143, 192, 67, 0.06);
   pointer-events: none;
 }
 
@@ -198,54 +294,78 @@ html, body {
   min-width: 0;
 }
 
+.hero-eyebrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6vw;
+}
+
 .hero-eyebrow {
   font-size: min(1vw, 2vh);
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-hero-muted);
   line-height: 1;
 }
 
-/* Cap by both vw and vh so the number can never overflow the hero row, even
-   when the browser window is short and the row height is the constraint
-   instead of the column width. Reduced from 7vw to keep room below for the
-   period subtitle and YTD readout. */
+.hero-month-chip {
+  font-size: min(0.7vw, 1.5vh);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-hero-muted);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25vh 0.5vw;
+  border-radius: 999px;
+}
+
 .hero-num {
   font-size: min(5.4vw, 10vh);
-  font-weight: 900;
+  font-weight: 800;
   line-height: 0.92;
   letter-spacing: -0.05em;
-  color: var(--white);
-  text-shadow: 0 0.3vw 1.5vw rgba(0, 0, 0, 0.25);
+  color: var(--text-hero);
+  text-shadow: var(--shadow-text);
   display: inline-block;
   transform-origin: left bottom;
 }
 
 .hero-period {
   font-size: min(1.1vw, 2.2vh);
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+  color: var(--text-hero-muted);
   margin-top: -0.1vh;
   text-transform: lowercase;
   letter-spacing: -0.005em;
   line-height: 1.05;
 }
 
-.hero-ytd {
-  font-size: min(0.75vw, 1.55vh);
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 0.4vh;
-  line-height: 1.1;
+.hero-ytd-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6vw;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.6vw;
+  padding: 0.5vh 0.8vw;
+  margin-top: 0.6vh;
+  align-self: flex-start;
 }
 
-.hero-ytd span {
-  font-weight: 900;
-  color: var(--white);
-  font-size: min(0.85vw, 1.8vh);
+.hero-ytd-label {
+  font-size: min(0.75vw, 1.55vh);
+  font-weight: 700;
+  color: var(--text-hero-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hero-ytd-value {
+  font-size: min(1.2vw, 2.4vh);
+  font-weight: 800;
+  color: var(--text-hero);
+  letter-spacing: -0.02em;
 }
 
 .hero-icon {
@@ -257,7 +377,7 @@ html, body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   padding: 1vw;
   color: rgba(255, 255, 255, 0.95);
 }
@@ -279,11 +399,11 @@ html, body {
 }
 
 .pipeline-title {
-  font-size: 1.05vw;
-  font-weight: 900;
+  font-size: 1vw;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--blue-700);
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
 }
 
 .pipeline-divider {
@@ -291,17 +411,17 @@ html, body {
   width: 0.4vw;
   height: 0.4vw;
   border-radius: 50%;
-  background: var(--blue-300);
+  background: var(--green);
 }
 
 .pipeline-flow {
-  font-size: 0.95vw;
-  font-weight: 700;
+  font-size: 0.85vw;
+  font-weight: 600;
   text-transform: lowercase;
-  color: var(--blue-500);
-  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  letter-spacing: -0.005em;
   flex: 1;
-  border-bottom: 0.1vw solid var(--blue-100);
+  border-bottom: 0.05vw solid var(--border-faint);
   padding-bottom: 0.4vh;
   display: flex;
   align-items: center;
@@ -309,8 +429,9 @@ html, body {
 }
 
 .pipeline-arrow {
-  color: var(--blue-300);
-  font-weight: 800;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  font-weight: 700;
 }
 
 /* ============ PIPELINE STRIP ============ */
@@ -324,9 +445,9 @@ html, body {
 
 .strip-tile {
   position: relative;
-  background: var(--white);
-  border: 0.1vw solid var(--blue-100);
-  border-radius: 1vw;
+  background: var(--bg-card);
+  border: 0.08vw solid var(--border-card);
+  border-radius: 0.9vw;
   padding: 0.9vw 0.85vw;
   display: flex;
   flex-direction: column;
@@ -335,18 +456,19 @@ html, body {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
+  transition: background 0.6s ease, border-color 0.6s ease;
 }
 
 .strip-emphasis {
-  background: var(--blue-50);
-  border-color: var(--blue-200);
+  background: var(--bg-card-emphasis);
+  border-color: var(--border-emphasis);
 }
 
 .strip-icon {
   width: min(1.8vw, 3.6vh);
   height: min(1.8vw, 3.6vh);
-  color: var(--blue-300);
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -357,20 +479,20 @@ html, body {
 }
 
 .strip-label {
-  font-size: min(0.9vw, 1.9vh);
-  font-weight: 900;
+  font-size: min(0.85vw, 1.8vh);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--blue-700);
+  color: var(--text-secondary);
   line-height: 1.15;
 }
 
 .strip-num {
   font-size: min(3.6vw, 7.5vh);
-  font-weight: 900;
-  color: var(--blue-900);
+  font-weight: 800;
+  color: var(--text-primary);
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   margin-top: auto;
   display: inline-block;
   transform-origin: left bottom;
@@ -378,8 +500,8 @@ html, body {
 
 .strip-sublabel {
   font-size: min(0.7vw, 1.5vh);
-  font-weight: 700;
-  color: var(--blue-500);
+  font-weight: 600;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 0.2vh;
@@ -389,8 +511,8 @@ html, body {
   position: absolute;
   top: 0.7vw;
   right: 0.7vw;
-  width: 1.6vw;
-  height: 1.6vw;
+  width: 1.5vw;
+  height: 1.5vw;
   filter: drop-shadow(0 0.15vw 0.3vw rgba(143, 192, 67, 0.3));
 }
 
@@ -406,24 +528,58 @@ html, body {
 }
 
 .card {
-  background: var(--white);
-  border: 0.1vw solid var(--blue-100);
+  background: var(--bg-card);
+  border: 0.08vw solid var(--border-card);
   border-radius: 1.2vw;
   padding: 1.1vw 1.4vw;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
+  transition: background 0.6s ease, border-color 0.6s ease;
+}
+
+.card-eyebrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6vw;
+  margin-bottom: 0.4vh;
 }
 
 .card-eyebrow {
   font-size: min(0.9vw, 1.9vh);
-  font-weight: 900;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--blue-500);
-  margin-bottom: 0.6vh;
+  color: var(--text-secondary);
+}
+
+.card-status-pill {
+  font-size: min(0.7vw, 1.5vh);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.3vh 0.7vw;
+  border-radius: 999px;
+  background: var(--tint-acq-bg);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.card-status-pill.pace-elite {
+  background: var(--pill-pace-elite-bg);
+  color: var(--pill-pace-elite-text);
+}
+
+.card-status-pill.pace-on {
+  background: var(--pill-pace-on-bg);
+  color: var(--pill-pace-on-text);
+}
+
+.card-status-pill.pace-behind {
+  background: var(--pill-pace-behind-bg);
+  color: var(--pill-pace-behind-text);
 }
 
 /* ---- Goal card ---- */
@@ -431,7 +587,7 @@ html, body {
 .card-goal {
   display: grid;
   grid-template-rows: auto auto auto auto;
-  gap: 1vh;
+  gap: 0.9vh;
 }
 
 .goal-display {
@@ -442,8 +598,8 @@ html, body {
 
 .goal-num {
   font-size: min(4.6vw, 9.5vh);
-  font-weight: 900;
-  color: var(--blue-900);
+  font-weight: 800;
+  color: var(--text-primary);
   line-height: 0.95;
   letter-spacing: -0.04em;
   display: inline-block;
@@ -452,18 +608,18 @@ html, body {
 
 .goal-of {
   font-size: min(1.4vw, 2.8vh);
-  font-weight: 800;
-  color: var(--blue-300);
+  font-weight: 700;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .goal-track {
   position: relative;
-  height: 1.6vw;
-  background: var(--blue-50);
-  border: 0.12vw solid var(--blue-100);
-  border-radius: 1vw;
+  height: 1.4vw;
+  background: var(--bg-track);
+  border: 0.1vw solid var(--border-card);
+  border-radius: 999px;
   overflow: visible;
 }
 
@@ -471,9 +627,9 @@ html, body {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, var(--green) 0%, var(--green-light) 100%);
-  border-radius: 1vw;
+  border-radius: 999px;
   transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 1vw rgba(143, 192, 67, 0.4) inset;
+  box-shadow: 0 0 0.8vw rgba(143, 192, 67, 0.45) inset;
 }
 
 .goal-fill-zee {
@@ -497,24 +653,39 @@ html, body {
 
 .goal-stats {
   display: flex;
-  align-items: center;
-  gap: 0.7vw;
-  font-size: min(0.95vw, 2vh);
-  font-weight: 700;
-  color: var(--blue-500);
+  gap: 1.4vw;
+  align-items: flex-end;
+}
+
+.goal-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+}
+
+.goal-stat-num {
+  font-size: min(1.4vw, 2.9vh);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.goal-stat-num strong { font-weight: 800; }
+
+.goal-stat-unit {
+  font-size: 0.7em;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  margin-left: 0.05vw;
+}
+
+.goal-stat-label {
+  font-size: min(0.7vw, 1.5vh);
+  font-weight: 600;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-}
-
-.goal-stats strong {
-  color: var(--blue-900);
-  font-weight: 900;
-  font-size: min(1.15vw, 2.4vh);
-}
-
-.goal-stats-divider {
-  color: var(--blue-200);
-  font-weight: 900;
 }
 
 /* ---- Countdown card ---- */
@@ -523,26 +694,26 @@ html, body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: linear-gradient(160deg, var(--blue-50) 0%, #DCE8F5 100%);
-  border: 0.15vw dashed var(--blue-300);
+  background: var(--bg-card-emphasis);
+  border: 0.12vw dashed var(--tint-future-strong);
 }
 
 .card-countdown .card-eyebrow {
-  margin-bottom: 0.5vh;
+  color: var(--tint-future-text);
 }
 
 .countdown-num {
   font-size: min(6.5vw, 14vh);
-  font-weight: 900;
-  color: var(--blue-900);
+  font-weight: 800;
+  color: var(--text-primary);
   line-height: 1;
   letter-spacing: -0.05em;
 }
 
 .countdown-meta {
   font-size: min(0.95vw, 2vh);
-  font-weight: 800;
-  color: var(--blue-500);
+  font-weight: 700;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-top: 0.6vh;
@@ -557,39 +728,39 @@ html, body {
   align-items: baseline;
   justify-content: space-between;
   padding: 0.7vh 0;
-  border-bottom: 0.1vw solid var(--blue-50);
+  border-bottom: 0.05vw solid var(--border-faint);
 }
 
 .ytd-row:last-child { border-bottom: none; }
 
 .ytd-label {
-  font-size: min(1vw, 2.1vh);
-  font-weight: 800;
-  color: var(--blue-500);
+  font-size: min(0.95vw, 2vh);
+  font-weight: 700;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .ytd-value {
-  font-size: min(2vw, 4.4vh);
-  font-weight: 900;
-  color: var(--blue-900);
+  font-size: min(1.8vw, 4vh);
+  font-weight: 800;
+  color: var(--text-primary);
   line-height: 1;
   letter-spacing: -0.03em;
 }
 
 .ytd-total-row {
-  border-top: 0.15vw solid var(--blue-200);
+  border-top: 0.12vw solid var(--border-emphasis);
   margin-top: 0.4vh;
   padding-top: 1vh;
 }
 
 .ytd-total-row .ytd-label {
-  color: var(--blue-700);
+  color: var(--green);
 }
 
 .ytd-total-row .ytd-value {
-  font-size: min(2.4vw, 5.2vh);
+  font-size: min(2.2vw, 4.8vh);
   color: var(--green);
 }
 
@@ -600,9 +771,9 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5vw;
-  font-size: 0.8vw;
-  color: var(--blue-300);
-  font-weight: 700;
+  font-size: 0.7vw;
+  color: var(--text-tertiary);
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -626,10 +797,10 @@ html, body {
 }
 
 @keyframes pop-hero {
-  0% { transform: scale(1); color: var(--white); }
+  0% { transform: scale(1); color: var(--text-hero); }
   20% { transform: scale(1.15); color: var(--green-light); }
   60% { transform: scale(0.98); }
-  100% { transform: scale(1); color: var(--white); }
+  100% { transform: scale(1); color: var(--text-hero); }
 }
 
 /* ============ CELEBRATION OVERLAY ============ */

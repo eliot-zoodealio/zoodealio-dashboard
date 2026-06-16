@@ -6,10 +6,10 @@
   <title>Zoodealio Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-theme="light">
   <!-- Inline SVG symbol library (placeholder fallbacks; override via /assets/<slot>.svg|png files) -->
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <defs>
@@ -91,7 +91,10 @@
         <span class="brand-tagline">Live Pipeline</span>
       </div>
       <div class="status">
-        <div class="status-dot" id="status-dot"></div>
+        <div class="status-pill">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-pill-label">LIVE</span>
+        </div>
         <div class="status-text">
           <div class="status-time" id="status-time">—</div>
           <div class="status-label" id="status-label">loading…</div>
@@ -108,10 +111,16 @@
                onerror="this.outerHTML='<svg><use href=&quot;#i-house-in&quot;/></svg>'">
         </div>
         <div class="hero-content">
-          <div class="hero-eyebrow">Closed · Acquisitions</div>
+          <div class="hero-eyebrow-row">
+            <span class="hero-eyebrow">Closed · Acquisitions</span>
+            <span class="hero-month-chip" id="hero-month-acq">—</span>
+          </div>
           <div class="hero-num" data-metric="closedAcqMonth" data-celebrate="drop">0</div>
           <div class="hero-period">this month</div>
-          <div class="hero-ytd"><span data-metric="closedAcqYear">0</span> year to date</div>
+          <div class="hero-ytd-pill">
+            <span class="hero-ytd-label">Year to date</span>
+            <span class="hero-ytd-value" data-metric="closedAcqYear">0</span>
+          </div>
         </div>
       </div>
       <div class="hero hero-resale">
@@ -121,10 +130,16 @@
                onerror="this.outerHTML='<svg><use href=&quot;#i-house-sold&quot;/></svg>'">
         </div>
         <div class="hero-content">
-          <div class="hero-eyebrow">Closed · Resale</div>
+          <div class="hero-eyebrow-row">
+            <span class="hero-eyebrow">Closed · Resale</span>
+            <span class="hero-month-chip" id="hero-month-resale">—</span>
+          </div>
           <div class="hero-num" data-metric="closedResaleMonth" data-celebrate="drop">0</div>
           <div class="hero-period">this month</div>
-          <div class="hero-ytd"><span data-metric="closedResaleYear">0</span> year to date</div>
+          <div class="hero-ytd-pill">
+            <span class="hero-ytd-label">Year to date</span>
+            <span class="hero-ytd-value" data-metric="closedResaleYear">0</span>
+          </div>
         </div>
       </div>
     </section>
@@ -197,7 +212,10 @@
     <!-- ============ BOTTOM ROW ============ -->
     <section class="bottom-row">
       <div class="card card-goal">
-        <div class="card-eyebrow"><span id="goal-month-label">This Month</span> · Closings Goal</div>
+        <div class="card-eyebrow-row">
+          <span class="card-eyebrow"><span id="goal-month-label">This Month</span> · Closings Goal</span>
+          <span class="card-status-pill" id="goal-pace-pill">—</span>
+        </div>
         <div class="goal-display">
           <span class="goal-num" data-metric="closingsMonth">0</span>
           <span class="goal-of">of 25</span>
@@ -211,11 +229,18 @@
           </div>
         </div>
         <div class="goal-stats">
-          <span><strong id="goal-pct">0</strong>%</span>
-          <span class="goal-stats-divider">·</span>
-          <span><strong data-metric="goalRemaining">25</strong> to go</span>
-          <span class="goal-stats-divider">·</span>
-          <span><strong id="days-left">—</strong> days left</span>
+          <div class="goal-stat">
+            <div class="goal-stat-num"><strong id="goal-pct">0</strong><span class="goal-stat-unit">%</span></div>
+            <div class="goal-stat-label">complete</div>
+          </div>
+          <div class="goal-stat">
+            <div class="goal-stat-num"><strong data-metric="goalRemaining">25</strong></div>
+            <div class="goal-stat-label">to go</div>
+          </div>
+          <div class="goal-stat">
+            <div class="goal-stat-num"><strong id="days-left">—</strong></div>
+            <div class="goal-stat-label">days left</div>
+          </div>
         </div>
       </div>
 

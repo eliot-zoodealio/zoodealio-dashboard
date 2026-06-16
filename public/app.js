@@ -71,6 +71,7 @@ function tick() {
     fetchMetrics();
   }
   updateRefreshCountdown();
+  updateTheme();
 }
 
 // True when "now" is Mon-Fri between 7am and 6pm in the dashboard's timezone.
@@ -210,6 +211,14 @@ function render(data) {
   setText('footer-month', monthName);
   setText('goal-month-label', formatMonthShort(data.timezone));
 
+  // Three-letter month chip on the hero cards (JUN, JUL, etc.)
+  const monthChip = formatMonthChip(data.timezone);
+  setText('hero-month-acq', monthChip);
+  setText('hero-month-resale', monthChip);
+
+  // Goal pace pill — auto-classifies the current pace vs days elapsed
+  updateGoalPacePill(data.totals, data.timezone);
+
   lastSnapshot = data;
   firstRender = false;
 }
@@ -305,6 +314,61 @@ function formatMonthShort(tz) {
     month: 'long',
     timeZone: tz || undefined,
   });
+}
+
+// Three-letter uppercase month for the hero card chips (e.g. "JUN").
+function formatMonthChip(tz) {
+  return new Date()
+    .toLocaleDateString('en-US', { month: 'short', timeZone: tz || undefined })
+    .toUpperCase();
+}
+
+// Compares current closings progress to the expected pace by day-of-month and
+// updates the goal-pace pill (ELITE PACE / ON PACE / BEHIND PACE).
+function updateGoalPacePill(totals, tz) {
+  const pill = document.getElementById('goal-pace-pill');
+  if (!pill || !totals) return;
+  const daysIn = daysIntoMonth(tz);
+  const daysInMonth = daysIn + daysLeftInMonth(tz);
+  if (daysInMonth <= 0) return;
+  const expectedFrac = daysIn / daysInMonth;
+  const actualFrac = totals.goalProgress || 0;
+  // ratio > 1.15 = elite, 0.9–1.15 = on pace, < 0.9 = behind.
+  const ratio = expectedFrac > 0 ? actualFrac / expectedFrac : actualFrac;
+
+  let label, cls;
+  if (ratio >= 1.15) { label = 'ELITE PACE'; cls = 'pace-elite'; }
+  else if (ratio >= 0.9) { label = 'ON PACE'; cls = 'pace-on'; }
+  else { label = 'BEHIND PACE'; cls = 'pace-behind'; }
+  pill.textContent = label;
+  pill.className = `card-status-pill ${cls}`;
+}
+
+// How many full days have elapsed in the current month (0 on the 1st).
+function daysIntoMonth(tz) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz || undefined,
+    day: 'numeric',
+  });
+  return Math.max(0, Number(fmt.format(new Date())) - 1);
+}
+
+// ---------- Theme (auto light/dark) ----------
+// Light during business-ish daylight (6:00 AM – 7:00 PM Arizona); dark otherwise.
+// Runs on boot + inside the 1-second tick so the transition happens automatically
+// without needing a page reload.
+function updateTheme() {
+  const hourStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: dashboardTz,
+    hour: 'numeric',
+    hour12: false,
+  }).format(new Date());
+  const hour = Number(hourStr);
+  const isDark = hour >= 19 || hour < 6;
+  const target = isDark ? 'dark' : 'light';
+  if (document.body.dataset.theme !== target) {
+    document.body.dataset.theme = target;
+  }
 }
 
 // Days remaining in the current calendar month (inclusive of today).
@@ -523,11 +587,14 @@ initConfetti();
 // Boot
 // ===========================================================
 
+// Apply the correct theme before first paint so the user never sees a flash
+// of the wrong palette.
+updateTheme();
 // Always pull data on first load — even off-hours — so the dashboard isn't
 // blank when someone glances at it before 7am or over the weekend.
 fetchMetrics();
-// One-second tick handles both the live countdown and the business-hours-aware
-// refresh cadence. No separate fetch interval needed.
+// One-second tick handles the live countdown, the business-hours-aware
+// refresh cadence, AND the time-of-day theme switch.
 setInterval(tick, 1000);
 updateRefreshCountdown();
 

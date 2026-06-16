@@ -41,18 +41,20 @@ const COLUMNS = {
 
   // ESCROWS / acquisition escrows tab — data starts at row 9
   acqEscrowsStatus: 'A',           // metric #2,3: status filters
-  acqEscrowsProjectedClose: 'BL',  // metric #4: projected-close dates
+  acqEscrowsAddress: 'B',          // property address (Closing This Week card)
+  acqEscrowsProjectedClose: 'BL',  // metric #4: projected-close dates (also drives the Closing This Week card)
   acqEscrowsDataStartRow: 9,
 
   // ESCROWS / closed tab — data starts at row 6
-  closedAddress: 'A',  // property address (used by the Closing This Week card)
-  closedDealType: 'M', // metric #5a,5b: "Purchase" filter
-  closedDate: 'S',     // metric #5b paired with M: close date
+  closedDealType: 'M', // metric #5a,5b,9a,9b: "Purchase" / "Resale" filter
+  closedDate: 'S',     // metric #5b,9b paired with M: close date
   closedDataStartRow: 6,
 
   // ESCROWS / listings tab — data starts at row 10
-  listingsStatus: 'A',     // metric #6,7,8,9a: status filters
-  listingsSoldDate: 'AS',  // metric #9b paired with A: sold date
+  listingsStatus: 'A',     // metric #6,7,8: status filters (In Shop, For Sale, Res. UC)
+  listingsAddress: 'B',    // property address (Closing This Week card)
+  listingsCloseDate: 'AT', // resale close date (Closing This Week card)
+  // listingsSoldDate: 'AS',  // deprecated 2026-06; resale close logic moved to closed tab; this card uses AT
   listingsDataStartRow: 10,
 
   // OFFER REQUESTS / Sent C+ Addendum Acceptances tab — data starts at row 4
@@ -172,9 +174,12 @@ function cellToDate(cell) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-// Returns {monday, friday} (inclusive UTC midnights) of the current Monday-Friday
-// business week in the dashboard's timezone. Used by the Closing This Week card.
-function currentMonFriWeek() {
+// Returns {mondayMs, sundayMs} (inclusive UTC midnights) of the current
+// Monday-Sunday week in the dashboard's timezone. We use Mon-Sun (the full
+// calendar week) rather than Mon-Fri because close-of-escrow dates are
+// sometimes entered on weekends (which usually means the actual close
+// happens earlier — but the date stays on the weekend in the sheet).
+function currentMonSunWeek() {
   // Get today's date pieces in dashboard tz
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: TIMEZONE,
@@ -190,18 +195,18 @@ function currentMonFriWeek() {
   const daysSinceMon = wkIdx === 0 ? 6 : wkIdx - 1;
   const todayUtc = Date.UTC(y, m - 1, d);
   const mondayMs = todayUtc - daysSinceMon * 86400000;
-  const fridayMs = mondayMs + 4 * 86400000;
-  return { mondayMs, fridayMs };
+  const sundayMs = mondayMs + 6 * 86400000;
+  return { mondayMs, sundayMs };
 }
 
-function isInMonFriWeek(dateObj, week) {
+function isInMonSunWeek(dateObj, week) {
   if (!dateObj) return false;
   const ms = Date.UTC(
     dateObj.getUTCFullYear(),
     dateObj.getUTCMonth(),
     dateObj.getUTCDate(),
   );
-  return ms >= week.mondayMs && ms <= week.fridayMs;
+  return ms >= week.mondayMs && ms <= week.sundayMs;
 }
 
 // Short day-of-week label like "MON" / "TUE" used by the Closing This Week card.
@@ -251,10 +256,10 @@ function countDateInCurrentMonth(col) {
 }
 
 // Count rows whose date cell falls in the supplied Mon-Fri week boundaries.
-// `week` comes from currentMonFriWeek() — pass it in so we compute boundaries
+// `week` comes from currentMonSunWeek() — pass it in so we compute boundaries
 // only once per request.
 function countDateInWeek(col, week) {
-  return col.filter((row) => row && isInMonFriWeek(cellToDate(row[0]), week)).length;
+  return col.filter((row) => row && isInMonSunWeek(cellToDate(row[0]), week)).length;
 }
 
 // Sums column B values for any row where column A contains a date in the
@@ -267,7 +272,7 @@ function sumByDateInWeek(rows, week) {
   for (const row of rows) {
     if (!row || row.length < 2) continue;
     const dateObj = cellToDate(row[0]);
-    if (!isInMonFriWeek(dateObj, week)) continue;
+    if (!isInMonSunWeek(dateObj, week)) continue;
     const val = Number(row[1]);
     if (Number.isFinite(val)) sum += val;
   }
@@ -314,7 +319,7 @@ export default async function handler(req, res) {
       // Mon-Fri week sum from daily rows. Week boundaries get computed below
       // (see `week` declaration). We pre-compute it inline here so this read
       // can complete before we need it elsewhere.
-      const _josephWeek = currentMonFriWeek();
+      const _josephWeek = currentMonSunWeek();
       acceptancesWeek = sumByDateInWeek(josephDaily || [], _josephWeek);
     } catch (err) {
       // If the monthly tab doesn't exist yet (e.g. at the very start of a new month), keep 0
@@ -339,13 +344,14 @@ export default async function handler(req, res) {
       `'${TABS.closed}'!${COLUMNS.closedDate}${closedStart}:${COLUMNS.closedDate}`,
       // 4: listings tab status column
       `'${TABS.listings}'!${COLUMNS.listingsStatus}${listingsStart}:${COLUMNS.listingsStatus}`,
-      // 5: listings tab sold-date column — paired with status by row
-      `'${TABS.listings}'!${COLUMNS.listingsSoldDate}${listingsStart}:${COLUMNS.listingsSoldDate}`,
-      // 6: closed tab address column — paired with deal-type + date for the
-      //    Closing This Week card. Same row indexing as 2 and 3.
-      `'${TABS.closed}'!${COLUMNS.closedAddress}${closedStart}:${COLUMNS.closedAddress}`,
+      // 5: acquisitions escrows address column (Closing This Week card)
+      `'${TABS.acquisitionsEscrows}'!${COLUMNS.acqEscrowsAddress}${acqStart}:${COLUMNS.acqEscrowsAddress}`,
+      // 6: listings tab close-date column (Closing This Week card — resale side)
+      `'${TABS.listings}'!${COLUMNS.listingsCloseDate}${listingsStart}:${COLUMNS.listingsCloseDate}`,
+      // 7: listings tab address column (Closing This Week card)
+      `'${TABS.listings}'!${COLUMNS.listingsAddress}${listingsStart}:${COLUMNS.listingsAddress}`,
     ];
-    const [acqStatus, acqProjectedDate, closedDealType, closedDate, listingStatus, listingSoldDate, closedAddress] =
+    const [acqStatus, acqProjectedDate, closedDealType, closedDate, listingStatus, acqAddress, listingCloseDate, listingAddress] =
       await batchGet(sheetsClient, SHEETS.escrows, escrowsRanges);
 
     // 2. Inspection Acquisition — anything in column A that is not empty and not "Cancelled"
@@ -356,7 +362,7 @@ export default async function handler(req, res) {
 
     // Pre-compute the current Mon-Fri week boundaries once; we'll reuse for
     // both metric #4 (Projected Closings week) and the Closing This Week card.
-    const week = currentMonFriWeek();
+    const week = currentMonSunWeek();
 
     // --- Offer Requests sheet (Sent C+ Addendum Acceptances tab) ---
     // Wrapped in try/catch like the Joseph read — a hiccup on this third sheet
@@ -379,7 +385,7 @@ export default async function handler(req, res) {
         addendumsSent,
         addendumsDate,
         (v) => eqCI(v, 'Yes'),
-        (v) => isInMonFriWeek(cellToDate(v), week),
+        (v) => isInMonSunWeek(cellToDate(v), week),
       );
       addendumsMonth = countPaired(
         addendumsSent,
@@ -441,27 +447,34 @@ export default async function handler(req, res) {
       (v) => isCurrentMonth(v),
     );
 
-    // Closing This Week — read the `closed` tab as a single source of truth.
-    // For every row whose Type column contains "Purchase" or "Resale" AND
-    // whose COE date is in the current Monday-Friday week, emit
-    // { address, type, day, dateMs }. Sorted by date ascending. Uses the
-    // same `week` boundaries computed above for metric #4.
+    // Closing This Week — forward-looking. Pulls from the two pipeline tabs
+    // (not the `closed` tab) so it shows what's SCHEDULED to close this week,
+    // matching the team's planning view.
+    //   Acquisitions: acquisition escrows tab, column B (address) + BL (close date)
+    //   Resales:      listings tab,            column B (address) + AT (close date)
+    // Rows whose close date falls in the current Mon-Fri week are emitted as
+    // { address, type, day, dateMs }. Sorted by date ascending.
     const closingsThisWeek = [];
-    const closedRowCount = Math.max(closedDealType.length, closedDate.length, closedAddress.length);
-    for (let i = 0; i < closedRowCount; i++) {
-      const typeVal = closedDealType[i]?.[0];
-      const dateVal = closedDate[i]?.[0];
-      const addrVal = closedAddress[i]?.[0];
-      if (!typeVal || !dateVal) continue;
-      const isPurchase = containsCI(typeVal, 'purchase');
-      const isResale = containsCI(typeVal, 'resale');
-      if (!isPurchase && !isResale) continue;
-      const dateObj = cellToDate(dateVal);
-      if (!isInMonFriWeek(dateObj, week)) continue;
-      const address = asString(addrVal) || '(no address)';
+    const acqLen = Math.max(acqAddress.length, acqProjectedDate.length);
+    for (let i = 0; i < acqLen; i++) {
+      const dateObj = cellToDate(acqProjectedDate[i]?.[0]);
+      if (!isInMonSunWeek(dateObj, week)) continue;
+      const address = asString(acqAddress[i]?.[0]) || '(no address)';
       closingsThisWeek.push({
         address,
-        type: isPurchase ? 'Purchase' : 'Resale',
+        type: 'Acquisition',
+        day: dayShort(dateObj),
+        dateMs: dateObj.getTime(),
+      });
+    }
+    const listLen = Math.max(listingAddress.length, listingCloseDate.length);
+    for (let i = 0; i < listLen; i++) {
+      const dateObj = cellToDate(listingCloseDate[i]?.[0]);
+      if (!isInMonSunWeek(dateObj, week)) continue;
+      const address = asString(listingAddress[i]?.[0]) || '(no address)';
+      closingsThisWeek.push({
+        address,
+        type: 'Resale',
         day: dayShort(dateObj),
         dateMs: dateObj.getTime(),
       });

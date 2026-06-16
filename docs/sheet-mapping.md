@@ -24,7 +24,7 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 - **Source**: `OFFER_REQUESTS` → `Sent C+ Addendum Acceptances` tab → columns **AD** and **AF** (ranges `AD4:AD` and `AF4:AF`, paired by row)
 - **Logic**:
-  - **Week** (`addendumsWeek`): count rows where column AD = "Yes" AND column AF is a date in the current **Monday–Friday** business week
+  - **Week** (`addendumsWeek`): count rows where column AD = "Yes" AND column AF is a date in the current **Monday–Sunday** business week
   - **Month** (`addendumsMonth`): count rows where column AD = "Yes" AND column AF is a date in the current calendar month
 - **Display**: first tile in the pipeline strip (earliest stage of the acquisition funnel). Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom.
 - **Icon**: paper-plane (sent action).
@@ -35,7 +35,7 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 - **Source**: `JOSEPH`, current month tab (`MM/YYYY`)
   - **Month** (`acceptancesAcq`): direct read of cell **B8** (existing).
-  - **Week** (`acceptancesWeek`): open-ended read of columns **A:B**, then sum the values in column B for rows whose column A contains a date in the current **Monday–Friday** business week (Arizona time). Skips header / label rows (Goal, Total, Weekly Perc., Week N) naturally because only rows whose A cell parses as a date contribute.
+  - **Week** (`acceptancesWeek`): open-ended read of columns **A:B**, then sum the values in column B for rows whose column A contains a date in the current **Monday–Sunday** business week (Arizona time). Skips header / label rows (Goal, Total, Weekly Perc., Week N) naturally because only rows whose A cell parses as a date contribute.
 - **Display**: first tile on the acquisition side. Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom (`Mo · 31`).
 - **Animation**: subtle Zee peek on increase, fires on the **weekly** count.
 - **Edge case**: if a Mon-Fri week crosses a month boundary (e.g. Mon Jun 29 – Fri Jul 3), the weekly sum only includes days in the tab we read. The team's convention of putting cross-month rows in the tab named for the week's end-Friday month means the data is usually available in the tab we'd expect. If this becomes an issue, we can extend the API to read both the current and next month tabs.
@@ -58,7 +58,7 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 - **Source**: `ESCROWS` → `acquisitions escrows` tab → column **BL** (range `BL9:BL`)
 - **Logic**:
-  - **Week**: count rows where column BL is a date in the current **Monday–Friday** business week (Arizona time)
+  - **Week**: count rows where column BL is a date in the current **Monday–Sunday** business week (Arizona time)
   - **Month**: count rows where column BL is a date in the current calendar month
 - **Payload fields**: `projectedClosingsWeek` (big number on tile), `projectedClosingsMonth` (small substat at bottom).
 - **Display**: fourth tile on the acquisition side. Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom of the tile.
@@ -126,14 +126,14 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 
 ## Closing This Week (card at bottom of dashboard)
 
-- **Source**: `ESCROWS` → `closed` tab → columns **A**, **M**, **S** (ranges `A6:A`, `M6:M`, `S6:S`, paired by row)
-- **Logic**: collect every row where:
-  - Column M contains either `"purchase"` or `"resale"` (case-insensitive — matches `CO+ Purchase`, `C+ Resale`, `Flip Purchase`, etc.)
-  - Column S is a date in the current **Monday–Friday** week (Arizona time)
-- **Output**: array of `{ address, type, day, dateMs }` sorted by date ascending.
+Forward-looking view — shows what's **scheduled** to close this Mon–Sun, not what's already closed. Pulls from the two pipeline tabs (acquisition escrows + listings), not the `closed` tab.
+
+- **Acquisition rows source**: `ESCROWS` → `acquisition escrows` tab → columns **B** (address) and **BL** (projected close date). Same date column the Projected Close tile reads.
+- **Resale rows source**: `ESCROWS` → `listings` tab → columns **B** (address) and **AT** (close date).
+- **Filter**: rows where the close date is in the current **Monday–Sunday** week (Arizona time). The window includes Sat/Sun because close-of-escrow dates sometimes get entered on the weekend — this usually means the actual close happens before that date but the team keeps the recorded date on the weekend. Including Mon-Sun catches those rows.
+- **Output**: array of `{ address, type, day, dateMs }` sorted by date ascending. Type is `"Acquisition"` or `"Resale"`.
 - **Display**: full-width card above the footer. Shows up to 6 entries in a 2-column grid; surfaces a `+N more` badge if more exist. Empty state shows "No closings scheduled this week yet — let's change that."
-- **Address column**: A (Property Address on the `closed` tab).
-- **Why the closed tab as the single source**: it logs every closed deal (purchase OR resale) — distinguished by column M — and the COE date in column S is what determines what's actually closing. The hero `Closed · Resale` count still reads from `listings`, so if the team enters a Sold date in listings but hasn't logged it in `closed` yet (or vice versa) there can be a brief discrepancy. The card surfaces what's authoritatively closing.
+- **History**: the card originally read from the `closed` tab (after-the-fact log) but switched to the two pipeline tabs in June 2026 so it shows the team what's coming up this week, not what already closed.
 
 ## Refresh cadence
 

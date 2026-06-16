@@ -399,7 +399,7 @@ function renderClosingsThisWeek(entries, tz) {
 
 function closingRowHtml(entry) {
   const type = entry.type || '';
-  const typeCls = type.toLowerCase() === 'purchase' ? 'tag-purchase' : 'tag-resale';
+  const typeCls = type.toLowerCase() === 'resale' ? 'tag-resale' : 'tag-acquisition';
   const safeAddress = escapeHtml(entry.address || '');
   const day = (entry.day || '').slice(0, 3).toUpperCase();
   return `
@@ -420,7 +420,8 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
-// "Mon Jun 16 – Fri Jun 20" — used in the Closings card header.
+// "Mon Jun 16 – Sun Jun 22" — used in the Closings card header. Mon-Sun
+// matches the server's filter window, which includes weekend close dates.
 function formatWeekRange(tz) {
   const fmt = (date) => new Intl.DateTimeFormat('en-US', {
     timeZone: tz || dashboardTz,
@@ -428,7 +429,7 @@ function formatWeekRange(tz) {
     month: 'short',
     day: 'numeric',
   }).format(date);
-  // Compute Mon and Fri the same way the server does.
+  // Compute Mon and Sun the same way the server does.
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz || dashboardTz,
     year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short',
@@ -445,8 +446,8 @@ function formatWeekRange(tz) {
   const NOON_UTC_OFFSET = 12 * 60 * 60 * 1000;
   const todayUtc = Date.UTC(y, m - 1, d) + NOON_UTC_OFFSET;
   const mon = new Date(todayUtc - daysSinceMon * 86400000);
-  const fri = new Date(todayUtc + (4 - daysSinceMon) * 86400000);
-  return `${fmt(mon)} – ${fmt(fri)}`;
+  const sun = new Date(todayUtc + (6 - daysSinceMon) * 86400000);
+  return `${fmt(mon)} – ${fmt(sun)}`;
 }
 
 // ---------- Theme (auto light/dark) ----------

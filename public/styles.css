@@ -914,6 +914,7 @@ html, body {
   border-radius: 999px;
 }
 
+.closings-type.tag-acquisition,
 .closings-type.tag-purchase {
   background: var(--tint-acq-bg);
   color: var(--tint-acq-text);

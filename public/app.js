@@ -376,8 +376,8 @@ function renderClosingsThisWeek(entries, tz) {
   // Header: count chip + date range label
   if (count) {
     count.textContent = entries.length === 0
-      ? '0 deals'
-      : `${entries.length} deal${entries.length === 1 ? '' : 's'}`;
+      ? '0 closings'
+      : `${entries.length} closing${entries.length === 1 ? '' : 's'}`;
   }
   if (range) range.textContent = formatWeekRange(tz);
 

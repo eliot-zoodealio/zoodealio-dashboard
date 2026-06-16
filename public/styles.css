@@ -570,7 +570,7 @@ html, body {
   background: var(--bg-card);
   border: 0.08vw solid var(--border-card);
   border-radius: 1.2vw;
-  padding: 1.1vw 1.4vw;
+  padding: 0.85vw 1.3vw;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -626,7 +626,7 @@ html, body {
 .card-goal {
   display: grid;
   grid-template-rows: auto auto auto auto;
-  gap: 0.9vh;
+  gap: 0.5vh;
 }
 
 .goal-display {
@@ -636,7 +636,7 @@ html, body {
 }
 
 .goal-num {
-  font-size: min(4.6vw, 9.5vh);
+  font-size: min(3.8vw, 7.5vh);
   font-weight: 800;
   color: var(--text-primary);
   line-height: 0.95;
@@ -646,7 +646,7 @@ html, body {
 }
 
 .goal-of {
-  font-size: min(1.4vw, 2.8vh);
+  font-size: min(1.2vw, 2.4vh);
   font-weight: 700;
   color: var(--text-tertiary);
   text-transform: uppercase;
@@ -655,7 +655,7 @@ html, body {
 
 .goal-track {
   position: relative;
-  height: 1.4vw;
+  height: 1.1vw;
   background: var(--bg-track);
   border: 0.1vw solid var(--border-card);
   border-radius: 999px;
@@ -692,18 +692,19 @@ html, body {
 
 .goal-stats {
   display: flex;
-  gap: 1.4vw;
+  gap: 1.2vw;
   align-items: flex-end;
+  margin-top: 0.2vh;
 }
 
 .goal-stat {
   display: flex;
   flex-direction: column;
-  gap: 0.3vh;
+  gap: 0.15vh;
 }
 
 .goal-stat-num {
-  font-size: min(1.4vw, 2.9vh);
+  font-size: min(1.2vw, 2.4vh);
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
@@ -720,7 +721,7 @@ html, body {
 }
 
 .goal-stat-label {
-  font-size: min(0.7vw, 1.5vh);
+  font-size: min(0.65vw, 1.4vh);
   font-weight: 600;
   color: var(--text-tertiary);
   text-transform: uppercase;

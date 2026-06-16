@@ -8,6 +8,7 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 |---|---|---|
 | `JOSEPH` | Joseph - Tracking | `17QTyDys-e4fossUY5PcGNFZtJdrzDrWkzAdrVXiEN9Q` |
 | `ESCROWS` | 2026 Escrows and Closings | `1hu6Zd2uAOpiVjBls1tyBHXyM1RAHRw9qMEwnUF_wtAY` |
+| `OFFER_REQUESTS` | Zoodealio Offer Request Master Sheet | `19WNHss9kpe9jeMZhd9vX3WrZ3M85-PzRUQIbMl1cJpA` |
 
 ## Tabs
 
@@ -18,6 +19,17 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
   - `closed` — completed acquisition deals (column M deal-type classifier)
 
 ## Metric definitions
+
+### 0. Addendums Sent — Acquisition funnel (week + month)
+
+- **Source**: `OFFER_REQUESTS` → `Sent C+ Addendum Acceptances` tab → columns **AD** and **AF** (ranges `AD4:AD` and `AF4:AF`, paired by row)
+- **Logic**:
+  - **Week** (`addendumsWeek`): count rows where column AD = "Yes" AND column AF is a date in the current **Monday–Friday** business week
+  - **Month** (`addendumsMonth`): count rows where column AD = "Yes" AND column AF is a date in the current calendar month
+- **Display**: first tile in the pipeline strip (earliest stage of the acquisition funnel). Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom.
+- **Icon**: paper-plane (sent action).
+- **Animation**: subtle Zee peek on increase.
+- **Note**: data starts at **row 4** (rows 1–2 are totals header, row 3 is the column header row). The tab includes month-divider rows visually, but those don't satisfy the `AD = "Yes" AND AF is a date` predicate so they're filtered out automatically. Collapsed/grouped rows in the sheet UI don't affect the API — Sheets returns the full data range regardless of visibility state.
 
 ### 1. New Escrows — Acquisition (week + month)
 

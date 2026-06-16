@@ -18,6 +18,8 @@ const BUSINESS_HOUR_START = 7;  // 7:00 AM (inclusive)
 const BUSINESS_HOUR_END = 18;   // 6:00 PM (exclusive — last refresh at 5:30pm)
 
 const METRIC_KEYS = [
+  'addendumsWeek',
+  'addendumsMonth',
   'acceptancesAcq',
   'acceptancesWeek',
   'inspectionAcq',

@@ -18,12 +18,14 @@ import { google } from 'googleapis';
 const SHEETS = {
   joseph: '17QTyDys-e4fossUY5PcGNFZtJdrzDrWkzAdrVXiEN9Q',
   escrows: '1hu6Zd2uAOpiVjBls1tyBHXyM1RAHRw9qMEwnUF_wtAY',
+  offerRequests: '19WNHss9kpe9jeMZhd9vX3WrZ3M85-PzRUQIbMl1cJpA',
 };
 
 const TABS = {
   acquisitionsEscrows: 'acquisition escrows',
   listings: 'listings',
   closed: 'closed',
+  sentCAddendums: 'Sent C+ Addendum Acceptances',
 };
 
 // ===========================================================
@@ -52,6 +54,12 @@ const COLUMNS = {
   listingsStatus: 'A',     // metric #6,7,8,9a: status filters
   listingsSoldDate: 'AS',  // metric #9b paired with A: sold date
   listingsDataStartRow: 10,
+
+  // OFFER REQUESTS / Sent C+ Addendum Acceptances tab — data starts at row 4
+  // (rows 1–2 are totals header; row 3 is the column header row).
+  addendumsSentOut: 'AD',  // "Yes"/"No" — was an addendum actually sent
+  addendumsDate: 'AF',     // date the addendum was sent
+  addendumsDataStartRow: 4,
 };
 
 const GOAL_CLOSINGS_PER_MONTH = 25;
@@ -350,6 +358,39 @@ export default async function handler(req, res) {
     // both metric #4 (Projected Closings week) and the Closing This Week card.
     const week = currentMonFriWeek();
 
+    // --- Offer Requests sheet (Sent C+ Addendum Acceptances tab) ---
+    // Wrapped in try/catch like the Joseph read — a hiccup on this third sheet
+    // shouldn't break the whole dashboard. Counts rows where AD = "Yes" AND AF
+    // is a date in the current Mon-Fri week / month.
+    let addendumsWeek = 0;
+    let addendumsMonth = 0;
+    try {
+      const addStart = COLUMNS.addendumsDataStartRow;
+      const offerRanges = [
+        `'${TABS.sentCAddendums}'!${COLUMNS.addendumsSentOut}${addStart}:${COLUMNS.addendumsSentOut}`,
+        `'${TABS.sentCAddendums}'!${COLUMNS.addendumsDate}${addStart}:${COLUMNS.addendumsDate}`,
+      ];
+      const [addendumsSent, addendumsDate] = await batchGet(
+        sheetsClient,
+        SHEETS.offerRequests,
+        offerRanges,
+      );
+      addendumsWeek = countPaired(
+        addendumsSent,
+        addendumsDate,
+        (v) => eqCI(v, 'Yes'),
+        (v) => isInMonFriWeek(cellToDate(v), week),
+      );
+      addendumsMonth = countPaired(
+        addendumsSent,
+        addendumsDate,
+        (v) => eqCI(v, 'Yes'),
+        (v) => isCurrentMonth(v),
+      );
+    } catch (err) {
+      console.warn(`[metrics] could not read offer requests: ${err.message}`);
+    }
+
     // 4. Projected Closings Acq — column BL date filtering
     //    - Month: any date this calendar month
     //    - Week:  any date in the current Mon-Fri business week
@@ -431,6 +472,8 @@ export default async function handler(req, res) {
       timezone: TIMEZONE,
       josephTab,
       metrics: {
+        addendumsWeek,
+        addendumsMonth,
         acceptancesAcq,
         acceptancesWeek,
         inspectionAcq,

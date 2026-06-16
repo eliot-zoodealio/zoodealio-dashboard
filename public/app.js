@@ -219,6 +219,9 @@ function render(data) {
   // Goal pace pill — auto-classifies the current pace vs days elapsed
   updateGoalPacePill(data.totals, data.timezone);
 
+  // Closing This Week card
+  renderClosingsThisWeek(data.closingsThisWeek || [], data.timezone);
+
   lastSnapshot = data;
   firstRender = false;
 }
@@ -351,6 +354,91 @@ function daysIntoMonth(tz) {
     day: 'numeric',
   });
   return Math.max(0, Number(fmt.format(new Date())) - 1);
+}
+
+// ---------- Closing This Week card ----------
+//
+// Renders the data.closingsThisWeek array (from /api/metrics) into the
+// closings-list container. Each entry: { address, type, day, dateMs }.
+// Caps the displayed list at 6 entries and surfaces a "+N more" badge when
+// there are more than that. Falls back to an empty-state message when nothing
+// is closing this week.
+function renderClosingsThisWeek(entries, tz) {
+  const list = document.getElementById('closings-list');
+  const count = document.getElementById('closings-count');
+  const range = document.getElementById('closings-range');
+  if (!list) return;
+
+  // Header: count chip + date range label
+  if (count) {
+    count.textContent = entries.length === 0
+      ? '0 deals'
+      : `${entries.length} deal${entries.length === 1 ? '' : 's'}`;
+  }
+  if (range) range.textContent = formatWeekRange(tz);
+
+  if (entries.length === 0) {
+    list.innerHTML =
+      '<div class="closings-empty">No closings scheduled this week yet — let\'s change that.</div>';
+    return;
+  }
+
+  const MAX = 6;
+  const shown = entries.slice(0, MAX);
+  const remainder = entries.length - shown.length;
+  const html = shown.map((e) => closingRowHtml(e)).join('');
+  const more = remainder > 0
+    ? `<div class="closings-more">+${remainder} more closing this week</div>`
+    : '';
+  list.innerHTML = html + more;
+}
+
+function closingRowHtml(entry) {
+  const type = entry.type || '';
+  const typeCls = type.toLowerCase() === 'purchase' ? 'tag-purchase' : 'tag-resale';
+  const safeAddress = escapeHtml(entry.address || '');
+  const day = (entry.day || '').slice(0, 3).toUpperCase();
+  return `
+    <div class="closings-row">
+      <span class="closings-day">${day}</span>
+      <span class="closings-address">${safeAddress}</span>
+      <span class="closings-type ${typeCls}">${type}</span>
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// "Mon Jun 16 – Fri Jun 20" — used in the Closings card header.
+function formatWeekRange(tz) {
+  const fmt = (date) => new Intl.DateTimeFormat('en-US', {
+    timeZone: tz || dashboardTz,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+  // Compute Mon and Fri the same way the server does.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz || dashboardTz,
+    year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short',
+  }).formatToParts(new Date());
+  const y = Number(parts.find((p) => p.type === 'year').value);
+  const m = Number(parts.find((p) => p.type === 'month').value);
+  const d = Number(parts.find((p) => p.type === 'day').value);
+  const wk = parts.find((p) => p.type === 'weekday').value;
+  const wkIdx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wk);
+  const daysSinceMon = wkIdx === 0 ? 6 : wkIdx - 1;
+  const todayUtc = Date.UTC(y, m - 1, d);
+  const mon = new Date(todayUtc - daysSinceMon * 86400000);
+  const fri = new Date(todayUtc + (4 - daysSinceMon) * 86400000);
+  return `${fmt(mon)} – ${fmt(fri)}`;
 }
 
 // ---------- Theme (auto light/dark) ----------

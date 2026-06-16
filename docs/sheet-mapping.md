@@ -108,6 +108,17 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 - Definition: `(5a) + (9a)`
 - Display: supporting text only
 
+## Closing This Week (card at bottom of dashboard)
+
+- **Source**: `ESCROWS` → `closed` tab → columns **A**, **M**, **S** (ranges `A6:A`, `M6:M`, `S6:S`, paired by row)
+- **Logic**: collect every row where:
+  - Column M contains either `"purchase"` or `"resale"` (case-insensitive — matches `CO+ Purchase`, `C+ Resale`, `Flip Purchase`, etc.)
+  - Column S is a date in the current **Monday–Friday** week (Arizona time)
+- **Output**: array of `{ address, type, day, dateMs }` sorted by date ascending.
+- **Display**: full-width card above the footer. Shows up to 6 entries in a 2-column grid; surfaces a `+N more` badge if more exist. Empty state shows "No closings scheduled this week yet — let's change that."
+- **Address column**: A (Property Address on the `closed` tab).
+- **Why the closed tab as the single source**: it logs every closed deal (purchase OR resale) — distinguished by column M — and the COE date in column S is what determines what's actually closing. The hero `Closed · Resale` count still reads from `listings`, so if the team enters a Sold date in listings but hasn't logged it in `closed` yet (or vice versa) there can be a brief discrepancy. The card surfaces what's authoritatively closing.
+
 ## Refresh cadence
 
 - Browser polls `/api/metrics` every 5 minutes

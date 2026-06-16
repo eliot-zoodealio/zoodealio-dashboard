@@ -43,6 +43,7 @@ const COLUMNS = {
   acqEscrowsDataStartRow: 9,
 
   // ESCROWS / closed tab — data starts at row 6
+  closedAddress: 'A',  // property address (used by the Closing This Week card)
   closedDealType: 'M', // metric #5a,5b: "Purchase" filter
   closedDate: 'S',     // metric #5b paired with M: close date
   closedDataStartRow: 6,
@@ -152,6 +153,56 @@ function isCurrentMonth(cell) {
   return cellYear === year && cellMonth === month;
 }
 
+// Converts a sheet cell (Google Sheets serial number OR parseable date string)
+// into a JS Date in UTC. Returns null if the cell is empty / unparseable.
+function cellToDate(cell) {
+  if (cell === '' || cell === null || cell === undefined) return null;
+  if (typeof cell === 'number') {
+    return new Date(Date.UTC(1899, 11, 30) + Math.floor(cell) * 86400000);
+  }
+  const d = new Date(cell);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+// Returns {monday, friday} (inclusive UTC midnights) of the current Monday-Friday
+// business week in the dashboard's timezone. Used by the Closing This Week card.
+function currentMonFriWeek() {
+  // Get today's date pieces in dashboard tz
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIMEZONE,
+    year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short',
+  }).formatToParts(new Date());
+  const y = Number(parts.find((p) => p.type === 'year').value);
+  const m = Number(parts.find((p) => p.type === 'month').value);
+  const d = Number(parts.find((p) => p.type === 'day').value);
+  const wk = parts.find((p) => p.type === 'weekday').value; // Sun, Mon, Tue, ...
+  const wkIdx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wk);
+  // Days since most recent Monday (Mon=0, Tue=1, ..., Sun=6 — wrap so Sun rolls
+  // back to the previous Monday, not forward to the next).
+  const daysSinceMon = wkIdx === 0 ? 6 : wkIdx - 1;
+  const todayUtc = Date.UTC(y, m - 1, d);
+  const mondayMs = todayUtc - daysSinceMon * 86400000;
+  const fridayMs = mondayMs + 4 * 86400000;
+  return { mondayMs, fridayMs };
+}
+
+function isInMonFriWeek(dateObj, week) {
+  if (!dateObj) return false;
+  const ms = Date.UTC(
+    dateObj.getUTCFullYear(),
+    dateObj.getUTCMonth(),
+    dateObj.getUTCDate(),
+  );
+  return ms >= week.mondayMs && ms <= week.fridayMs;
+}
+
+// Short day-of-week label like "MON" / "TUE" used by the Closing This Week card.
+function dayShort(dateObj) {
+  if (!dateObj) return '';
+  const idx = dateObj.getUTCDay();
+  return ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][idx];
+}
+
 // ---------- Count operations on single-column ranges ----------
 // Ranges come back as Array<Array<any>> where each inner row is the row; for single-col
 // reads, each row looks like [value] (or may be missing for empty rows).
@@ -244,8 +295,11 @@ export default async function handler(req, res) {
       `'${TABS.listings}'!${COLUMNS.listingsStatus}${listingsStart}:${COLUMNS.listingsStatus}`,
       // 5: listings tab sold-date column — paired with status by row
       `'${TABS.listings}'!${COLUMNS.listingsSoldDate}${listingsStart}:${COLUMNS.listingsSoldDate}`,
+      // 6: closed tab address column — paired with deal-type + date for the
+      //    Closing This Week card. Same row indexing as 2 and 3.
+      `'${TABS.closed}'!${COLUMNS.closedAddress}${closedStart}:${COLUMNS.closedAddress}`,
     ];
-    const [acqStatus, acqProjectedDate, closedDealType, closedDate, listingStatus, listingSoldDate] =
+    const [acqStatus, acqProjectedDate, closedDealType, closedDate, listingStatus, listingSoldDate, closedAddress] =
       await batchGet(sheetsClient, SHEETS.escrows, escrowsRanges);
 
     // 2. Inspection Acquisition — anything in column A that is not empty and not "Cancelled"
@@ -295,6 +349,33 @@ export default async function handler(req, res) {
       (v) => isCurrentMonth(v),
     );
 
+    // Closing This Week — read the `closed` tab as a single source of truth.
+    // For every row whose Type column contains "Purchase" or "Resale" AND
+    // whose COE date is in the current Monday-Friday week, emit
+    // { address, type, day, dateMs }. Sorted by date ascending.
+    const week = currentMonFriWeek();
+    const closingsThisWeek = [];
+    const closedRowCount = Math.max(closedDealType.length, closedDate.length, closedAddress.length);
+    for (let i = 0; i < closedRowCount; i++) {
+      const typeVal = closedDealType[i]?.[0];
+      const dateVal = closedDate[i]?.[0];
+      const addrVal = closedAddress[i]?.[0];
+      if (!typeVal || !dateVal) continue;
+      const isPurchase = containsCI(typeVal, 'purchase');
+      const isResale = containsCI(typeVal, 'resale');
+      if (!isPurchase && !isResale) continue;
+      const dateObj = cellToDate(dateVal);
+      if (!isInMonFriWeek(dateObj, week)) continue;
+      const address = asString(addrVal) || '(no address)';
+      closingsThisWeek.push({
+        address,
+        type: isPurchase ? 'Purchase' : 'Resale',
+        day: dayShort(dateObj),
+        dateMs: dateObj.getTime(),
+      });
+    }
+    closingsThisWeek.sort((a, b) => a.dateMs - b.dateMs);
+
     // Composite totals
     const closingsMonth = closedAcqMonth + closedResaleMonth;
     const closingsYear = closedAcqYear + closedResaleYear;
@@ -324,6 +405,8 @@ export default async function handler(req, res) {
         goalProgress,
         goalRemaining: Math.max(0, GOAL_CLOSINGS_PER_MONTH - closingsMonth),
       },
+      // Each entry: { address, type ("Purchase"|"Resale"), day ("MON"…"FRI"), dateMs }
+      closingsThisWeek,
     };
 
     // Edge cache: serve from cache for 4 min, allow stale-while-revalidate for 1 more.

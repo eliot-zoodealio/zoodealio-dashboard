@@ -10,6 +10,21 @@ A landscape 16:9 office dashboard that runs full-screen on a **65" TV** in the Z
 
 **Owner**: Eliot Tomaszewski (eliot@zoodealio.com), in Arizona (America/Phoenix, no DST).
 
+## Current state (as of last update)
+
+- **All 8 pipeline tiles wired**: Addendums Sent → New Escrows → Acq. UC → Insp. Accepted → Projected Close → In Shop/Coming Soon → Listings → Res. UC
+- **Three split tiles** (Addendums Sent, New Escrows, Projected Close) show week count big + monthly substat pill
+- **Light + dark auto-switch** working (Inter font, war-room visual language)
+- **Closing This Week** card pulls forward-looking from acq escrows BL + listings AT (Mon-Sun week)
+- **Service account access**: granted on all three sheets (`zoodealio-dashboard-reader@heroic-mechanic-494322-m9.iam.gserviceaccount.com`)
+- **Cowork connection**: Eliot has the repo cloned at `~/Dev/zoodealio-dashboard` and connects it to Cowork sessions. Claude edits files directly; Eliot pushes via `git add -A && git commit -m "..." && git push`.
+
+## Workflow reminders
+
+- **Stuck git lock**: If Eliot sees `fatal: Unable to create '.git/index.lock': File exists` — run `rm -f .git/index.lock` first. The sandbox sometimes leaves the lockfile behind.
+- **Cache after CSS changes**: After pushing CSS, browser may show stale layout. Hard-refresh with `Cmd+Shift+R` (Mac) — `styles.css` is not hash-named, so browsers cache it aggressively.
+- **API cache**: `/api/metrics` has `s-maxage=240, stale-while-revalidate=60` — responses can be up to ~5 minutes stale at the edge.
+
 ## Tech stack
 
 - **Hosting**: Vercel (free tier, well within limits)
@@ -89,7 +104,9 @@ All three are shared with the service account email as **Viewer**.
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Grid template: `6vh 22vh 3.5vh 22vh minmax(0,1fr) 13vh 3.5vh`.
+Grid template: `6vh 22vh 3.5vh 22vh minmax(0,1fr) 15vh 3.5vh`. The closings card row is fixed at 15vh — enough to fit 6 entries in a 2-column grid with the tightened row sizing. The bottom row (Goal/Days Left/YTD) absorbs leftover space via the `1fr`.
+
+**Sizing note**: The bottom three cards are sensitive to changes in the closings row height. If you bump closings up, the YTD card is usually the first to clip (it has 4 rows of content); the Goal card is second (eyebrow + big num + progress bar + 3 mini-stats). The current sizing is dialed in — change with caution.
 
 ### Pipeline tiles — split vs. regular
 
@@ -252,6 +269,10 @@ These were discussed but not yet built:
 10. Addendums Sent → new 8th pipeline tile (8-column grid)
 11. Fix tile clipping, differentiate icons, restore Closed Resale to closed-tab logic
 12. Closing This Week → switched to forward-looking sources (acq escrows BL + listings AT), Mon-Sun week
+13. Goal card content clipping fix — smaller goal-num, tighter gaps, slimmer progress bar
+14. Closings card sized to fit 6 properties — bumped row + tightened per-entry padding/fonts
+15. Closings badge "deals" → "closings" rename
+16. YTD card clipping fix — tighter ytd-row padding, smaller label/value fonts, closings row 16vh→15vh
 
 ---
 

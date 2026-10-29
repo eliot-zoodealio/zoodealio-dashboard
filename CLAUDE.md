@@ -12,7 +12,7 @@ A landscape 16:9 office dashboard that runs full-screen on a **65" TV** in the Z
 
 ## Current state (as of last update)
 
-- **All 8 pipeline tiles wired**: Addendums Sent → New Escrows → Acq. UC → Insp. Accepted → Projected Close → In Shop/Coming Soon → Listings → Res. UC
+- **All 8 pipeline tiles wired**: Addendums Sent → New Escrows → Acq. UC → Insp. Accepted → Projected Close → Renovation/Coming Soon → Listed → Res. UC
 - **Three split tiles** (Addendums Sent, New Escrows, Projected Close) show week count big + monthly substat pill
 - **Light + dark auto-switch** working (Inter font, war-room visual language)
 - **Closing This Week** card pulls forward-looking from acq escrows BL + listings AT (Mon-Sun week)
@@ -94,7 +94,7 @@ All three are shared with the service account email as **Viewer**.
 ├──────────────────────────────────────────────────────────────┤
 │ Pipeline strip — 8 tiles:                                    │
 │  Addendums Sent | New Escrows | Acq. UC | Insp. Accepted |   │
-│  Projected Close | In Shop/Coming Soon | Listings | Res. UC  │
+│  Projected Close | Renov./Coming Soon | Listed  | Res. UC  │
 ├──────────────────────────────────────────────────────────────┤
 │ June Closings Goal  |  Days Left in Month  |  Year to Date   │
 ├──────────────────────────────────────────────────────────────┤
@@ -124,8 +124,8 @@ Grid template: `6vh 22vh 3.5vh 22vh minmax(0,1fr) 15vh 3.5vh`. The closings card
 | Acq. Under Contract | `inspectionAcq` | acq escrows column A: non-empty and not starting with "Cancel" |
 | Insp. Accepted | `inspectionAccepted` | acq escrows column A: starts with "Closing" OR contains "Funding" (see `ACQ_STATUS`) |
 | Projected Close | `projectedClosingsWeek` (Mo: `projectedClosingsMonth`) | acq escrows column BL date in week/month, cancelled rows excluded |
-| In Shop / Coming Soon | `inShopComingSoon` | listings column A NOT IN [Active, Under Contract, Sold] (non-empty) |
-| Listings | `listingsForSale` | listings column A = "Active" |
+| Renovation / Coming Soon | `inShopComingSoon` | listings column A NOT IN [Active, Under Contract, Sold] (non-empty) |
+| Listed | `listingsForSale` | listings column A = "Active" |
 | Res. Under Contract | `underContractResale` | listings column A = "Under Contract" |
 
 ### Hero tiles
@@ -198,7 +198,7 @@ All Lucide-inspired, 2px stroke, currentColor, 32x32 viewBox:
 - `#i-clipboard` — Acq. Under Contract
 - `#i-shield-check` — Insp. Accepted
 - `#i-calendar` — Projected Close
-- `#i-clock` — In Shop / Coming Soon
+- `#i-clock` — Renovation / Coming Soon
 - `#i-tag` — Listings
 - `#i-tag-check` — Res. Under Contract
 - `#i-check` — green circle check (used as overlay on tiles with strip-checked class)

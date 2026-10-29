@@ -80,18 +80,18 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 - **Display**: hero number on the left side ("X closings this month")
 - **Animation**: full Zee pin-drop celebration on increase
 
-### 6. In Shop / Coming Soon
+### 6. Renovation / Coming Soon (formerly "In Shop / Coming Soon")
 
 - **Source**: `ESCROWS` → `listings` tab → column A (range `A10:A`)
 - **Logic**: count non-empty rows where column A is **NOT** one of `Active`, `Under Contract`, or `Sold` (case-insensitive). Captures reno, prep, pre-listing, "Coming Soon", and any future intermediate status the team adds without needing a code change.
-- **Display**: number, center-bridge tile (between acquisition and resale). Labelled **"In Shop / Coming Soon"** with "in progress" subtitle.
+- **Display**: number, center-bridge tile (between acquisition and resale). Labelled **"Renovation / Coming Soon"** with "in progress" subtitle.
 - **Payload field**: `inShopComingSoon` (renamed from `renovationsInProcess` in May 2026).
 
-### 7. Listings — For Sale
+### 7. Listed — For Sale (formerly "Listings")
 
 - **Source**: `ESCROWS` → `listings` tab → column A (range `A10:A`)
 - **Logic**: count rows where column A = "Active"
-- **Display**: number, first tile on the resale side
+- **Display**: number, first tile on the resale side. Labelled **"Listed"**.
 
 ### 8. Under Contract — Resale
 

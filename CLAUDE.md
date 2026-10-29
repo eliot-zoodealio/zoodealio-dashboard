@@ -121,9 +121,9 @@ Grid template: `6vh 22vh 3.5vh 22vh minmax(0,1fr) 15vh 3.5vh`. The closings card
 |---|---|---|
 | Addendums Sent | `addendumsWeek` (Mo: `addendumsMonth`) | Offer Requests / Sent C+ Addendum, AD="Yes" AND AF in week/month |
 | New Escrows | `acceptancesWeek` (Mo: `acceptancesAcq`) | Joseph current-month tab, A:B daily rows summed by week, B8 monthly |
-| Acq. Under Contract | `inspectionAcq` | acq escrows column A: anything non-empty and not "Cancelled" |
-| Insp. Accepted | `inspectionAccepted` | acq escrows column A: "Closing" OR "Need Funding" |
-| Projected Close | `projectedClosingsWeek` (Mo: `projectedClosingsMonth`) | acq escrows column BL date in week/month |
+| Acq. Under Contract | `inspectionAcq` | acq escrows column A: non-empty and not starting with "Cancel" |
+| Insp. Accepted | `inspectionAccepted` | acq escrows column A: starts with "Closing" OR contains "Funding" (see `ACQ_STATUS`) |
+| Projected Close | `projectedClosingsWeek` (Mo: `projectedClosingsMonth`) | acq escrows column BL date in week/month, cancelled rows excluded |
 | In Shop / Coming Soon | `inShopComingSoon` | listings column A NOT IN [Active, Under Contract, Sold] (non-empty) |
 | Listings | `listingsForSale` | listings column A = "Active" |
 | Res. Under Contract | `underContractResale` | listings column A = "Under Contract" |
@@ -240,7 +240,6 @@ All Lucide-inspired, 2px stroke, currentColor, 32x32 viewBox:
 These were discussed but not yet built:
 - **Kiosk mode + password gate** on the TV (one-time browser/OS setup, no code change)
 - **Verify on the real 65" TV** at full scale — schedule a viewing session
-- **Cross-month week** edge case for New Escrows weekly read — if a Mon-Sun week spans month boundary, we only read the current month tab. Could add a next-month-tab read for robustness.
 - **Per-rep leaderboard** — not yet planned, but a sibling dashboard exists at `eliot-zoodealio/zoodealio-warroom` with a leaderboard pattern that may eventually feed in.
 
 ## Style preferences (Eliot's taste, established through iterations)

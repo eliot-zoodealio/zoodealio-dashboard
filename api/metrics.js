@@ -64,6 +64,23 @@ const COLUMNS = {
   addendumsDataStartRow: 4,
 };
 
+// ===========================================================
+// Acquisition-escrow status rules (column A of `acquisition escrows`).
+// Matched by PREFIX / SUBSTRING, not exact equality, because the team
+// refines status labels over time. History:
+//   2026-10  "Closing"   → "Closing/Reno", "Closing/No Reno"
+//            "Cancelled" → "Cancelled/Pending EM"
+//            Funding stages added: "Funding Request Sent",
+//            "Funding Approved-Waiting on Signed Doc" (alongside "Need Funding")
+// Exact-match logic silently dropped these rows, which made Insp. Accepted
+// undercount and let cancelled deals leak into Acq. UC / Projected Close.
+// ===========================================================
+const ACQ_STATUS = {
+  cancelledPrefixes: ['cancel'],          // Cancelled, Cancelled/Pending EM, ...
+  acceptedPrefixes: ['closing'],          // Closing, Closing/Reno, Closing/No Reno, ...
+  acceptedContains: ['funding'],          // Need Funding, Funding Request Sent, Funding Approved-..., ...
+};
+
 const GOAL_CLOSINGS_PER_MONTH = 25;
 
 const TIMEZONE = process.env.DASHBOARD_TIMEZONE || 'America/Phoenix';
@@ -92,8 +109,12 @@ function getCurrentYearMonth() {
 // (e.g. "04/2026", "05/2026").
 function currentMonthTab() {
   const { year, month } = getCurrentYearMonth();
-  const mm = String(month + 1).padStart(2, '0');
-  return `${mm}/${year}`;
+  return monthTabName(year, month);
+}
+
+// month is 0-indexed.
+function monthTabName(year, month) {
+  return `${String(month + 1).padStart(2, '0')}/${year}`;
 }
 
 // ---------- Auth ----------
@@ -143,6 +164,20 @@ function eqCI(a, b) {
 
 function containsCI(cell, needle) {
   return asString(cell).toLowerCase().includes(asString(needle).toLowerCase());
+}
+
+function isCancelledAcqStatus(cell) {
+  const s = asString(cell).toLowerCase();
+  return ACQ_STATUS.cancelledPrefixes.some((p) => s.startsWith(p));
+}
+
+function isAcceptedAcqStatus(cell) {
+  const s = asString(cell).toLowerCase();
+  if (s === '' || isCancelledAcqStatus(s)) return false;
+  return (
+    ACQ_STATUS.acceptedPrefixes.some((p) => s.startsWith(p)) ||
+    ACQ_STATUS.acceptedContains.some((c) => s.includes(c))
+  );
 }
 
 function isCurrentMonth(cell) {
@@ -228,15 +263,6 @@ function countContains(col, needle) {
   return col.filter((row) => row && containsCI(row[0], needle)).length;
 }
 
-function countNotEqNonEmpty(col, value) {
-  return col.filter((row) => {
-    if (!row) return false;
-    const cell = asString(row[0]);
-    if (cell === '') return false;
-    return !eqCI(cell, value);
-  }).length;
-}
-
 // Count non-empty rows whose value is NOT in any of the provided values
 // (case-insensitive). Used for "everything else" buckets like
 // In Shop / Coming Soon which is defined as the complement of Active /
@@ -251,31 +277,27 @@ function countNotInSetNonEmpty(col, values) {
   }).length;
 }
 
-function countDateInCurrentMonth(col) {
-  return col.filter((row) => row && isCurrentMonth(row[0])).length;
-}
-
-// Count rows whose date cell falls in the supplied Mon-Fri week boundaries.
-// `week` comes from currentMonSunWeek() — pass it in so we compute boundaries
-// only once per request.
-function countDateInWeek(col, week) {
-  return col.filter((row) => row && isInMonSunWeek(cellToDate(row[0]), week)).length;
-}
-
-// Sums column B values for any row where column A contains a date in the
-// current Mon-Fri business week. Used by the New Escrows weekly count which
-// reads the Joseph tracking sheet's daily rows. Skips header / label rows
-// naturally because only rows whose A cell parses as a date contribute.
-// `rows` is the [A, B] pair returned by the Sheets API for a range like A:B.
-function sumByDateInWeek(rows, week) {
-  let sum = 0;
-  for (const row of rows) {
-    if (!row || row.length < 2) continue;
-    const dateObj = cellToDate(row[0]);
-    if (!isInMonSunWeek(dateObj, week)) continue;
-    const val = Number(row[1]);
-    if (Number.isFinite(val)) sum += val;
+// Sums the Joseph daily counts (column B) for dates in the current week across
+// one or more month tabs. Each date is counted once: the tab for that date's own
+// month wins (tabs repeat neighbouring-month dates in their Week 1 / last week
+// blocks), and another tab only fills in if the owning tab is unavailable.
+function sumJosephWeek(tabsByName, week) {
+  const byDate = new Map(); // dayMs -> { value, fromOwnTab }
+  for (const [tabName, rows] of Object.entries(tabsByName)) {
+    for (const row of rows) {
+      if (!row || row.length < 2) continue;
+      const dateObj = cellToDate(row[0]);
+      if (!isInMonSunWeek(dateObj, week)) continue;
+      const val = Number(row[1]);
+      if (!Number.isFinite(val)) continue;
+      const own = monthTabName(dateObj.getUTCFullYear(), dateObj.getUTCMonth()) === tabName;
+      const key = Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+      const prev = byDate.get(key);
+      if (!prev || (own && !prev.fromOwnTab)) byDate.set(key, { value: val, fromOwnTab: own });
+    }
   }
+  let sum = 0;
+  for (const { value } of byDate.values()) sum += value;
   return sum;
 }
 
@@ -302,11 +324,12 @@ export default async function handler(req, res) {
     // --- Joseph sheet ---
     // Two reads against the current month's tab ("MM/YYYY", e.g. "06/2026"):
     //   1) B8           — monthly New Escrows total (existing — same as before)
-    //   2) A:B (open)   — daily rows so we can sum the current Mon-Fri week
+    //   2) A:B (open)   — daily rows so we can sum the current Mon-Sun week
     // Override the tab name with JOSEPH_TAB env var if needed.
     const josephTab = process.env.JOSEPH_TAB || currentMonthTab();
     const josephRange = `'${josephTab}'!${COLUMNS.josephAcceptancesCell}`;
     const josephDailyRange = `'${josephTab}'!A:B`;
+    const josephWeek = currentMonSunWeek();
     let acceptancesAcq = 0;
     let acceptancesWeek = 0;
     try {
@@ -316,11 +339,25 @@ export default async function handler(req, res) {
         [josephRange, josephDailyRange],
       );
       acceptancesAcq = Number(josephB8?.[0]?.[0] ?? 0) || 0;
-      // Mon-Fri week sum from daily rows. Week boundaries get computed below
-      // (see `week` declaration). We pre-compute it inline here so this read
-      // can complete before we need it elsewhere.
-      const _josephWeek = currentMonSunWeek();
-      acceptancesWeek = sumByDateInWeek(josephDaily || [], _josephWeek);
+
+      // When the Mon-Sun week straddles a month boundary, the days that belong
+      // to the other month live on that month's tab. Read it too (best effort —
+      // the next month's tab may not exist yet).
+      const tabsByName = { [josephTab]: josephDaily || [] };
+      if (!process.env.JOSEPH_TAB) {
+        for (const ms of [josephWeek.mondayMs, josephWeek.sundayMs]) {
+          const d = new Date(ms);
+          const name = monthTabName(d.getUTCFullYear(), d.getUTCMonth());
+          if (tabsByName[name]) continue;
+          try {
+            const [rows] = await batchGet(sheetsClient, SHEETS.joseph, [`'${name}'!A:B`]);
+            tabsByName[name] = rows || [];
+          } catch (err) {
+            console.warn(`[metrics] joseph tab ${name} unavailable: ${err.message}`);
+          }
+        }
+      }
+      acceptancesWeek = sumJosephWeek(tabsByName, josephWeek);
     } catch (err) {
       // If the monthly tab doesn't exist yet (e.g. at the very start of a new month), keep 0
       // rather than failing the whole response. New month → make the tab → numbers light up.
@@ -354,20 +391,22 @@ export default async function handler(req, res) {
     const [acqStatus, acqProjectedDate, closedDealType, closedDate, listingStatus, acqAddress, listingCloseDate, listingAddress] =
       await batchGet(sheetsClient, SHEETS.escrows, escrowsRanges);
 
-    // 2. Inspection Acquisition — anything in column A that is not empty and not "Cancelled"
-    const inspectionAcq = countNotEqNonEmpty(acqStatus, 'Cancelled');
+    // 2. Acq. Under Contract — column A non-empty and not a Cancelled* status
+    const inspectionAcq = acqStatus.filter(
+      (row) => row && asString(row[0]) !== '' && !isCancelledAcqStatus(row[0]),
+    ).length;
 
-    // 3. Inspection Accepted Acq — column A = "Closing" or "Need Funding"
-    const inspectionAccepted = countEq(acqStatus, 'Closing') + countEq(acqStatus, 'Need Funding');
+    // 3. Insp. Accepted — column A is a Closing* or *Funding* status (see ACQ_STATUS)
+    const inspectionAccepted = acqStatus.filter((row) => row && isAcceptedAcqStatus(row[0])).length;
 
-    // Pre-compute the current Mon-Fri week boundaries once; we'll reuse for
+    // Pre-compute the current Mon-Sun week boundaries once; we'll reuse for
     // both metric #4 (Projected Closings week) and the Closing This Week card.
     const week = currentMonSunWeek();
 
     // --- Offer Requests sheet (Sent C+ Addendum Acceptances tab) ---
     // Wrapped in try/catch like the Joseph read — a hiccup on this third sheet
     // shouldn't break the whole dashboard. Counts rows where AD = "Yes" AND AF
-    // is a date in the current Mon-Fri week / month.
+    // is a date in the current Mon-Sun week / month.
     let addendumsWeek = 0;
     let addendumsMonth = 0;
     try {
@@ -399,9 +438,16 @@ export default async function handler(req, res) {
 
     // 4. Projected Closings Acq — column BL date filtering
     //    - Month: any date this calendar month
-    //    - Week:  any date in the current Mon-Fri business week
-    const projectedClosingsMonth = countDateInCurrentMonth(acqProjectedDate);
-    const projectedClosingsWeek = countDateInWeek(acqProjectedDate, week);
+    //    - Week:  any date in the current Mon-Sun week (cancelled rows excluded)
+    //    Cancelled deals are excluded — they are not going to close.
+    const notCancelled = (v) => !isCancelledAcqStatus(v);
+    const projectedClosingsMonth = countPaired(acqStatus, acqProjectedDate, notCancelled, isCurrentMonth);
+    const projectedClosingsWeek = countPaired(
+      acqStatus,
+      acqProjectedDate,
+      notCancelled,
+      (v) => isInMonSunWeek(cellToDate(v), week),
+    );
 
     // 5a. Closed Acquisitions (year) — column M contains "Purchase"
     const closedAcqYear = countContains(closedDealType, 'purchase');
@@ -452,11 +498,12 @@ export default async function handler(req, res) {
     // matching the team's planning view.
     //   Acquisitions: acquisition escrows tab, column B (address) + BL (close date)
     //   Resales:      listings tab,            column B (address) + AT (close date)
-    // Rows whose close date falls in the current Mon-Fri week are emitted as
+    // Rows whose close date falls in the current Mon-Sun week (cancelled acquisitions skipped) are emitted as
     // { address, type, day, dateMs }. Sorted by date ascending.
     const closingsThisWeek = [];
     const acqLen = Math.max(acqAddress.length, acqProjectedDate.length);
     for (let i = 0; i < acqLen; i++) {
+      if (isCancelledAcqStatus(acqStatus[i]?.[0])) continue;
       const dateObj = cellToDate(acqProjectedDate[i]?.[0]);
       if (!isInMonSunWeek(dateObj, week)) continue;
       const address = asString(acqAddress[i]?.[0]) || '(no address)';

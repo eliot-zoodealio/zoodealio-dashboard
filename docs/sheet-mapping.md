@@ -38,20 +38,22 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
   - **Week** (`acceptancesWeek`): open-ended read of columns **A:B**, then sum the values in column B for rows whose column A contains a date in the current **Monday–Sunday** business week (Arizona time). Skips header / label rows (Goal, Total, Weekly Perc., Week N) naturally because only rows whose A cell parses as a date contribute.
 - **Display**: first tile on the acquisition side. Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom (`Mo · 31`).
 - **Animation**: subtle Zee peek on increase, fires on the **weekly** count.
-- **Edge case**: if a Mon-Fri week crosses a month boundary (e.g. Mon Jun 29 – Fri Jul 3), the weekly sum only includes days in the tab we read. The team's convention of putting cross-month rows in the tab named for the week's end-Friday month means the data is usually available in the tab we'd expect. If this becomes an issue, we can extend the API to read both the current and next month tabs.
+- **Cross-month weeks** (fixed 2026-10): when the Mon–Sun week spans two months, the API also reads the other month's `MM/YYYY` tab (best effort — skipped if it doesn't exist). Each date is counted once; the tab named for that date's own month wins.
 
 ### 2. Inspection Acquisition
 
 - **Source**: `ESCROWS` → `acquisitions escrows` tab → column A (range `A9:A`)
-- **Logic**: count rows where column A has a value AND value is **not** "Cancelled" (case-insensitive)
+- **Logic**: count rows where column A has a value AND value does **not start with** "Cancel" (case-insensitive) — catches `Cancelled`, `Cancelled/Pending EM`, etc.
 - **Display**: number, second tile on the acquisition side
 - **Meaning**: everything still active in the escrow pipeline, cancelled rows excluded
 
 ### 3. Inspection Accepted — Acq
 
 - **Source**: `ESCROWS` → `acquisitions escrows` tab → column A (range `A9:A`)
-- **Logic**: count rows where column A = "Closing" OR column A = "Need Funding"
-- **Equivalent formula**: `=COUNTIF(A:A,"Closing") + COUNTIF(A:A,"Need Funding")`
+- **Logic**: count rows where column A **starts with** "Closing" OR **contains** "Funding" (case-insensitive). Rules live in `ACQ_STATUS` in `api/metrics.js`.
+- **Current statuses matched** (Oct 2026): `Closing/Reno`, `Closing/No Reno`, `Need Funding`, `Funding Request Sent`, `Funding Approved-Waiting on Signed Doc`
+- **Not matched**: `Inspection Period`, `Inspect Add Sent`, `Cancelled*`
+- **History**: was exact-match on "Closing" / "Need Funding" until Oct 2026, when the team split those labels and the tile silently undercounted.
 - **Display**: number with green checkmark, third tile on the acquisition side
 
 ### 4. Projected Closings — Acquisition (week + month)
@@ -60,6 +62,7 @@ Single source of truth for where every dashboard metric comes from. Keep this fi
 - **Logic**:
   - **Week**: count rows where column BL is a date in the current **Monday–Sunday** business week (Arizona time)
   - **Month**: count rows where column BL is a date in the current calendar month
+  - Rows whose status (column A) starts with "Cancel" are excluded from both (and from the Closing This Week card).
 - **Payload fields**: `projectedClosingsWeek` (big number on tile), `projectedClosingsMonth` (small substat at bottom).
 - **Display**: fourth tile on the acquisition side. Week is the headline number with "this week" subtitle; month sits as a purple-tinted substat pill at the bottom of the tile.
 - **History**: moved from column BK → BL in May 2026. Week/month split added in June 2026. If the column ever moves again, update the COLUMNS block in `api/metrics.js` (one line) and this doc.
